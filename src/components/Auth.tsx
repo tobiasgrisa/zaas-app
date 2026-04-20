@@ -141,17 +141,17 @@ export default function Auth({ onLogin }: AuthProps) {
           <div className="grid md:grid-cols-2 gap-6">
             <Card 
               onClick={() => setMode('register-company')}
-              className="bg-[#111114] border-white/5 hover:border-primary/50 transition-all cursor-pointer group rounded-[2.5rem] p-4 flex flex-col items-center text-center shadow-2xl"
+              className="bg-[#111114] border-white/5 hover:border-indigo-500/50 transition-all cursor-pointer group rounded-[2.5rem] p-4 flex flex-col items-center text-center shadow-2xl"
             >
               <div className="p-8 pb-4">
-                <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform mb-6 border border-primary/20">
-                  <Building2 className="text-primary" size={40} />
+                <div className="w-20 h-20 rounded-3xl bg-indigo-500/10 flex items-center justify-center group-hover:scale-110 transition-transform mb-6 border border-indigo-500/20">
+                  <Building2 className="text-indigo-500" size={40} />
                 </div>
                 <h3 className="text-2xl font-black text-white mb-2">Cadastrar Empresa</h3>
-                <p className="text-slate-500 text-sm">Para novos proprietários ou administradores master.</p>
+                <p className="text-slate-400 text-sm">Para novos proprietários ou administradores master.</p>
               </div>
               <div className="mt-4 pb-4">
-                <span className="text-primary font-bold group-hover:underline">Começar →</span>
+                <span className="text-indigo-400 font-bold group-hover:underline">Começar →</span>
               </div>
             </Card>
 
@@ -186,8 +186,8 @@ export default function Auth({ onLogin }: AuthProps) {
     <div className="min-h-screen bg-[#0a0a0c] flex items-center justify-center p-6 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent">
       <div className="w-full max-w-md animate-in fade-in zoom-in duration-500">
         <div className="text-center mb-8">
-          <div className="inline-flex p-4 rounded-3xl bg-primary/10 mb-4 border border-primary/20 shadow-[0_0_20px_rgba(139,92,246,0.1)]">
-            {mode === 'login' ? <LogIn className="text-primary" size={32} /> : mode === 'register-company' ? <Building2 className="text-primary" size={32} /> : <UserPlus className="text-indigo-500" size={32} />}
+          <div className="inline-flex p-4 rounded-3xl bg-indigo-500/10 mb-4 border border-indigo-500/20 shadow-[0_0_20px_rgba(99,102,241,0.1)]">
+            {mode === 'login' ? <LogIn className="text-indigo-500" size={32} /> : mode === 'register-company' ? <Building2 className="text-indigo-500" size={32} /> : <UserPlus className="text-indigo-500" size={32} />}
           </div>
           <h1 className="text-3xl font-black text-white tracking-tight">
             {mode === 'login' ? 'Bem-vindo de volta' : mode === 'register-company' ? 'Nova Empresa' : 'Novo Usuário'}
@@ -287,7 +287,7 @@ export default function Auth({ onLogin }: AuthProps) {
                 disabled={loading}
                 className={cn(
                   "w-full h-12 rounded-xl text-white font-bold text-sm shadow-lg transition-all active:scale-95 mt-4",
-                  mode === 'register-member' ? "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20" : "bg-primary hover:bg-primary/90 shadow-primary/20"
+                  "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20"
                 )}
               >
                 {loading ? 'Processando...' : mode === 'login' ? 'Entrar no Sistema' : 'Finalizar Cadastro'}

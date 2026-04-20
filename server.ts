@@ -1,5 +1,4 @@
-import 'dotenv/config';
-
+// Removed dotenv for Vercel
 import express from 'express';
 import path from 'path';
 import { supabase } from './lib/supabase';
