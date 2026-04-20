@@ -251,6 +251,12 @@ export const api = express.Router();
   api.post('/auth/register-company', async (req, res) => {
     const { companyName, cnpj, adminName, email, password } = req.body;
     try {
+      // Safety check: Ensure we are using a Service Role key on the server
+      const isServiceRole = !!(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY);
+      if (!isServiceRole && process.env.VERCEL === '1') {
+        throw new Error('Configuração incompleta na Vercel: A chave "SUPABASE_SERVICE_ROLE_KEY" não foi encontrada. Verifique as variáveis de ambiente.');
+      }
+
       // 1. Create Company
       const { data: company, error: compError } = await supabase
         .from('companies')
