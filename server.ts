@@ -12,14 +12,11 @@ if (!resend) {
   console.warn('RESEND_API_KEY não encontrada. O envio de e-mails será simulado no console.');
 }
 
-async function startServer() {
-  const app = express();
-  const PORT = 3000;
+export const app = express();
+app.use(express.json());
 
-  app.use(express.json());
-
-  // API Routes
-  const api = express.Router();
+// API Routes
+export const api = express.Router();
 
   // Dashboard Summary
   api.get('/summary', async (req, res) => {
@@ -446,26 +443,32 @@ async function startServer() {
 
   app.use('/api', api);
 
-  // Vite middleware for development
-  if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
+  // Serve Frontend / Start Local Server (ignored by Vercel Serverless)
+  if (process.env.NODE_ENV !== 'production' && process.env.VERCEL !== '1') {
+    // Only used locally for Vite Dev Server
+    import('vite').then(({ createServer: createViteServer }) => {
+      createViteServer({
+        server: { middlewareMode: true },
+        appType: 'spa',
+      }).then((vite) => {
+        app.use(vite.middlewares);
+        const PORT = process.env.PORT || 3000;
+        app.listen(PORT, '0.0.0.0', () => {
+          console.log(`Server running on http://localhost:${PORT}`);
+          console.log(`Supabase integrated.`);
+        });
+      });
     });
-    app.use(vite.middlewares);
-  } else {
+  } else if (process.env.VERCEL !== '1') {
+    // Standard Node.js VPS Production (non-Vercel)
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+    app.get('*', (req, res) => res.sendFile(path.join(distPath, 'index.html')));
+    
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running internally on port ${PORT}`);
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-    console.log(`Supabase integrated.`);
-  });
-}
-
-startServer();
-
+  export default app;
