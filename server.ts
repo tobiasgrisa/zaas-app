@@ -288,19 +288,27 @@ export const api = express.Router();
       if (authError) throw authError;
       if (!authData.user) throw new Error('Falha ao criar usuário.');
 
-      // 3. Create Profile (Master)
-      const { error: profError } = await supabase
+      // 3. Create or Update Profile (Master)
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .insert([{
-          id: authData.user.id,
-          name: adminName,
-          email,
-          company_id: company.id,
-          role: 'master',
-          status: 'approved'
-        }]);
+        .select()
+        .eq('email', email)
+        .maybeSingle();
 
-      if (profError) throw profError;
+      if (!existingProfile) {
+        const { error: profError } = await supabase
+          .from('profiles')
+          .insert([{
+            id: authData?.user?.id || existingProfile?.id,
+            name: adminName,
+            email,
+            company_id: company.id,
+            role: 'master',
+            status: 'approved'
+          }]);
+
+        if (profError) throw profError;
+      }
 
       // 4. Seed Initial Data for the new company
       const defaultCostCenters = [
