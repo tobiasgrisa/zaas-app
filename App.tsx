@@ -4,9 +4,9 @@
  */
 
 import React from 'react';
-import Layout from './components/Layout';
-import Dashboard from './components/Dashboard';
-import Transactions from './components/Transactions';
+import Layout from '@/src/components/Layout';
+import Dashboard from '@/src/components/Dashboard';
+import Transactions from '@/src/components/Transactions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, BarChart3, TrendingUp, Building2 } from 'lucide-react';
@@ -14,11 +14,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
-import Clients from './components/Clients';
-import CostCenter from './components/CostCenter';
-import CashFlow from './components/CashFlow';
-import Reports from './components/Reports';
-import Equipe from './components/Equipe';
+import Clients from '@/src/components/Clients';
+import CostCenter from '@/src/components/CostCenter';
+import CashFlow from '@/src/components/CashFlow';
+import Reports from '@/src/components/Reports';
+import Equipe from '@/src/components/Equipe';
 
 function Registrations() {
   return (
@@ -89,8 +89,8 @@ function Projects() {
 
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'sonner';
-import Auth from './components/Auth';
-import Settings from './components/Settings';
+import Auth from '@/src/components/Auth';
+import Settings from '@/src/components/Settings';
 
 export default function App() {
   const [activeTab, setActiveTab] = React.useState('dashboard');

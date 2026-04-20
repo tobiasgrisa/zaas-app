@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { LogIn, UserPlus, Lock, Mail, User, Building2, ShieldCheck, ArrowLeft, CreditCard, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase-browser';
 
 interface AuthProps {
   onLogin: (user: any) => void;
