@@ -257,14 +257,26 @@ export const api = express.Router();
         throw new Error('Configuração incompleta na Vercel: A chave "SUPABASE_SERVICE_ROLE_KEY" não foi encontrada. Verifique as variáveis de ambiente.');
       }
 
-      // 1. Create Company
-      const { data: company, error: compError } = await supabase
+      // 1. Check if Company already exists, otherwise create it
+      let company;
+      const { data: existingCompany } = await supabase
         .from('companies')
-        .insert([{ name: companyName, cnpj }])
         .select()
-        .single();
+        .eq('cnpj', cnpj)
+        .maybeSingle();
 
-      if (compError) throw compError;
+      if (existingCompany) {
+        company = existingCompany;
+      } else {
+        const { data: newCompany, error: compError } = await supabase
+          .from('companies')
+          .insert([{ name: companyName, cnpj }])
+          .select()
+          .single();
+
+        if (compError) throw compError;
+        company = newCompany;
+      }
 
       // 2. Create Auth User
       const { data: authData, error: authError } = await supabase.auth.signUp({
