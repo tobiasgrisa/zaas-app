@@ -164,7 +164,7 @@ export default function Auth({ onLogin }: AuthProps) {
                   <UserPlus className="text-indigo-500" size={40} />
                 </div>
                 <h3 className="text-2xl font-black text-white mb-2">Cadastrar Usuário</h3>
-                <p className="text-slate-500 text-sm">Para funcionários convidados por uma empresa existente.</p>
+                <p className="text-slate-400 text-sm">Para funcionários convidados por uma empresa existente.</p>
               </div>
               <div className="mt-4 pb-4">
                 <span className="text-indigo-400 font-bold group-hover:underline">Começar →</span>
@@ -174,7 +174,7 @@ export default function Auth({ onLogin }: AuthProps) {
           
           <div className="mt-10 text-center">
             <button onClick={() => setMode('login')} className="text-slate-400 font-medium hover:text-white transition-colors">
-              Já possui uma conta? <span className="text-primary font-bold">Faça login</span>
+              Já possui uma conta? <span className="text-indigo-500 font-bold">Faça login</span>
             </button>
           </div>
         </div>
@@ -183,7 +183,7 @@ export default function Auth({ onLogin }: AuthProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0c] flex items-center justify-center p-6 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent">
+    <div className="min-h-screen bg-[#0a0a0c] flex items-center justify-center p-6 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-indigo-500/10 via-transparent to-transparent">
       <div className="w-full max-w-md animate-in fade-in zoom-in duration-500">
         <div className="text-center mb-8">
           <div className="inline-flex p-4 rounded-3xl bg-indigo-500/10 mb-4 border border-indigo-500/20 shadow-[0_0_20px_rgba(99,102,241,0.1)]">
@@ -192,7 +192,7 @@ export default function Auth({ onLogin }: AuthProps) {
           <h1 className="text-3xl font-black text-white tracking-tight">
             {mode === 'login' ? 'Bem-vindo de volta' : mode === 'register-company' ? 'Nova Empresa' : 'Novo Usuário'}
           </h1>
-          <p className="text-slate-500 mt-2 font-medium">
+          <p className="text-slate-400 mt-2 font-medium">
             {mode === 'login' ? 'Acesse o sistema EngERP' : mode === 'register-company' ? 'Crie o perfil master da sua empresa' : 'Entre na sua equipe agora'}
           </p>
         </div>
@@ -250,7 +250,7 @@ export default function Auth({ onLogin }: AuthProps) {
               )}
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest pl-1">E-mail</label>
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-1">E-mail</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                   <Input 
@@ -308,9 +308,9 @@ export default function Auth({ onLogin }: AuthProps) {
                 className="text-slate-400 text-sm hover:text-white transition-colors"
               >
                 {mode === 'login' ? (
-                  <>Não tem conta? <span className="text-primary font-bold">Cadastre-se</span></>
+                  <>Não tem conta? <span className="text-indigo-500 font-bold">Cadastre-se</span></>
                 ) : (
-                  <>Já possui conta? <span className="text-primary font-bold">Faça login</span></>
+                  <>Já possui conta? <span className="text-indigo-500 font-bold">Faça login</span></>
                 )}
               </button>
             </div>
