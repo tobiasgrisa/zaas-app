@@ -208,7 +208,7 @@ export default function Auth({ onLogin }: AuthProps) {
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                     <Input 
                       required
-                      className="bg-[#16161a] border-white/5 pl-10 h-12 rounded-xl focus:ring-primary/50"
+                      className="bg-[#16161a] border-white/5 pl-10 h-12 rounded-xl focus:ring-primary/50 text-white"
                       placeholder="Seu nome"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -224,7 +224,7 @@ export default function Auth({ onLogin }: AuthProps) {
                     <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                     <Input 
                       required
-                      className="bg-[#16161a] border-white/5 pl-10 h-12 rounded-xl focus:ring-primary/50"
+                      className="bg-[#16161a] border-white/5 pl-10 h-12 rounded-xl focus:ring-primary/50 text-white"
                       placeholder="Minha Engenharia LTDA"
                       value={formData.companyName}
                       onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
@@ -240,7 +240,7 @@ export default function Auth({ onLogin }: AuthProps) {
                     <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                     <Input 
                       required
-                      className="bg-[#16161a] border-white/5 pl-10 h-12 rounded-xl focus:ring-primary/50"
+                      className="bg-[#16161a] border-white/5 pl-10 h-12 rounded-xl focus:ring-primary/50 text-white"
                       placeholder="00.000.000/0001-00"
                       value={formData.cnpj}
                       onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })}
@@ -256,7 +256,7 @@ export default function Auth({ onLogin }: AuthProps) {
                   <Input 
                     required
                     type="email"
-                    className="bg-[#16161a] border-white/5 pl-10 h-12 rounded-xl focus:ring-primary/50"
+                    className="bg-[#16161a] border-white/5 pl-10 h-12 rounded-xl focus:ring-primary/50 text-white"
                     placeholder="seu@email.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -274,7 +274,7 @@ export default function Auth({ onLogin }: AuthProps) {
                   <Input 
                     required
                     type="password"
-                    className="bg-[#16161a] border-white/5 pl-10 h-12 rounded-xl focus:ring-primary/50"
+                    className="bg-[#16161a] border-white/5 pl-10 h-12 rounded-xl focus:ring-primary/50 text-white"
                     placeholder="••••••••"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}

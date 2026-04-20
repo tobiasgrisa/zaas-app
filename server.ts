@@ -1,7 +1,6 @@
 import 'dotenv/config';
 
 import express from 'express';
-import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import { supabase } from './lib/supabase';
 import { Resend } from 'resend';
