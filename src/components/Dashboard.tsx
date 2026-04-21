@@ -21,28 +21,55 @@ export default function Dashboard() {
       const yearParam = selectedYear !== 'all' ? `year=${selectedYear}` : '';
       
       const summaryData = await apiFetch('/api/summary');
-      const txData = await apiFetch(`/api/transactions?${yearParam}`);
+      const txDataRaw = await apiFetch(`/api/transactions?${yearParam}`);
+      
+      let janInitial = 0;
+      if (selectedYear !== 'all') {
+        const janBal = await apiFetch(`/api/opening-balance?year=${selectedYear}&month=0`).catch(() => ({amount: 0}));
+        janInitial = janBal?.amount || 0;
+      } else {
+        janInitial = summaryData.balance; // Fallback for 'all'
+      }
 
       const mDataMap: Record<string, { receita: number, despesa: number }> = {};
       MONTHS.forEach(m => mDataMap[m] = { receita: 0, despesa: 0 });
 
       let periodPaidRec = 0;
       let periodPaidDesp = 0;
+      let periodPaidLucro = 0;
+
+      const txData = Array.isArray(txDataRaw) ? txDataRaw : [];
 
       txData.forEach((r: any) => {
-        const isPaid = !!r.paymentDate;
-        if (!isPaid) return;
+        const pDate = r.payment_date || r.paymentDate;
+        if (!pDate) return;
 
         const val = Number(r.amount);
-        const refDate = new Date(r.paymentDate);
-        const dMonthIdx = refDate.getMonth();
+        // Robust reading of month
+        let dMonthIdx = 0;
+        if (typeof pDate === 'string' && pDate.includes('-')) {
+          dMonthIdx = parseInt(pDate.split('-')[1], 10) - 1;
+        } else {
+          dMonthIdx = new Date(pDate).getMonth();
+        }
+        
+        if (dMonthIdx < 0 || dMonthIdx > 11) dMonthIdx = 0;
+
+        const isDivisaoLucro = 
+          (r.costCenter || r.cost_center_name || '').toUpperCase().includes('DIVISÃO DE LUCRO') || 
+          (r.classification || '').toUpperCase().includes('DIVISÃO DE LUCRO');
 
         if (r.type === 'income') {
           periodPaidRec += val;
           mDataMap[MONTHS[dMonthIdx]].receita += val;
         } else {
-          periodPaidDesp += val;
-          mDataMap[MONTHS[dMonthIdx]].despesa += val;
+          if (isDivisaoLucro) {
+            periodPaidLucro += val;
+            // Divisão de lucro não entra no gráfico de despesa operacional mensal
+          } else {
+            periodPaidDesp += val;
+            mDataMap[MONTHS[dMonthIdx]].despesa += val;
+          }
         }
       });
 
@@ -51,12 +78,16 @@ export default function Dashboard() {
         ...mDataMap[name]
       }));
 
+      const finalAccumulated = selectedYear === 'all' 
+        ? summaryData.balance // Use bank sum for 'all'
+        : janInitial + periodPaidRec - periodPaidDesp - periodPaidLucro;
+
       setChartData(mData);
       setSummary({
-        globalBalance: summaryData.balance,
+        globalBalance: finalAccumulated,
         income: periodPaidRec,
         expense: periodPaidDesp,
-        profit: periodPaidRec - periodPaidDesp
+        profit: periodPaidRec - periodPaidDesp // Lucro = Receita Ope - Despesa Ope
       });
     } catch (e) {
       console.error('Error loading dashboard data', e);
