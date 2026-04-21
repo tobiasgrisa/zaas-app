@@ -116,14 +116,14 @@ export default function Transactions() {
   // linhas do mês selecionado
   const [rows, setRows] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [initialBalanceJan, setInitialBalanceJan] = React.useState(0);
+  const [openingBalance, setOpeningBalance] = React.useState(0);
 
-  const loadInitialBalance = async () => {
+  const loadOpeningBalance = async () => {
     try {
-      const data = await apiFetch(`/api/initial-balance?year=${selectedYear}&month=${selectedMonth}`);
-      setInitialBalanceJan(data.amount || 0);
+      const data = await apiFetch(`/api/opening-balance?year=${selectedYear}&month=${selectedMonth}`);
+      setOpeningBalance(data.amount || 0);
     } catch (e) {
-      console.error('Error loading initial balance:', e);
+      console.error('Error loading opening balance:', e);
     }
   };
 
@@ -131,9 +131,10 @@ export default function Transactions() {
     try {
       await apiFetch('/api/initial-balance', {
         method: 'POST',
-        body: JSON.stringify({ year: selectedYear, month: selectedMonth, amount: val })
+        body: JSON.stringify({ year: selectedYear, month: 0, amount: val })
       });
-      toast.success('Saldo inicial atualizado!');
+      toast.success('Saldo inicial de Janeiro atualizado!');
+      loadOpeningBalance();
     } catch (e) {
       toast.error('Erro ao salvar saldo inicial');
     }
@@ -183,7 +184,7 @@ export default function Transactions() {
   // Carrega transações ao mudar de mês/ano
   React.useEffect(() => {
     loadTransactions();
-    loadInitialBalance();
+    loadOpeningBalance();
   }, [selectedYear, selectedMonth]);
 
 
@@ -208,26 +209,15 @@ export default function Transactions() {
         else pDesp += val;
       }
     });
-
     return { totalReceita: tRec, totalDespesa: tDesp, totalAReceber: pRec, totalAPagar: pDesp };
   }, [rows]);
 
   const resultado = totalReceita - totalDespesa;
-
-  const loadSummary = async () => {
-    try {
-      const data = await apiFetch('/api/summary');
-      // O saldo inicial real pode ser extraído do resumo ou calculado
-      setSaldoAnterior(data.balance - (totalReceita - totalDespesa)); 
-    } catch (e) {}
-  };
-
-  React.useEffect(() => {
-    loadSummary();
-  }, [selectedYear, selectedMonth, rows]);
-
+  
   // Saldo inicial efetivo do mês exibido
-  const effectiveSaldo = selectedMonth === 0 ? initialBalanceJan : saldoAnterior;
+  const effectiveSaldo = openingBalance;
+  
+  const acumuladoFinal = effectiveSaldo + resultado;
 
 
   // ── parcelas (gerador automático) ────────────────────────────────────────────
@@ -313,23 +303,19 @@ export default function Transactions() {
   };
 
   // ── mutations ────────────────────────────────────────────────────────────────
-  const acumuladoFinal = effectiveSaldo + resultado;
+  const acumuladoFinalView = effectiveSaldo + resultado;
 
   // ── Acumulado Visual Linha-a-Linha ───────────────────────────────────────────
   let accumulated = effectiveSaldo;
   const processed = [...rows]
     .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
     .map(r => {
-      // Na tabela local, a contagem de "Acumulado" linha-a-linha exibe a adição APENAS 
-      // se a linha pertencer REALMENTE ao mês de pagamento vigente.
       const pDate = r.paymentDate?.trim();
+      const val = parseBRL(r.amount);
       if (pDate) {
-        const d = new Date(pDate + 'T12:00:00');
-        if (d.getFullYear() === selectedYear && d.getMonth() === selectedMonth) {
-          const val = parseBRL(r.amount);
-          if (r.type === 'income') accumulated += val;
-          else accumulated -= val;
-        }
+        // No regime de caixa, só afeta o acumulado se FOI PAGO
+        if (r.type === 'income') accumulated += val;
+        else accumulated -= val;
       }
       return { ...r, accumulated };
     });
@@ -646,13 +632,13 @@ export default function Transactions() {
                 <span className="text-[10px] uppercase text-slate-500">Saldo Inicial</span>
                 <input
                   className="w-full bg-indigo-500/10 border border-indigo-500/20 rounded px-2 py-1 text-xs font-bold text-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  value={fmtBRL(initialBalanceJan)}
+                  value={fmtBRL(openingBalance)}
                   onChange={(e) => {
                     const digits = e.target.value.replace(/\D/g, '');
                     const val = digits ? parseFloat(digits) / 100 : 0;
-                    setInitialBalanceJan(val);
+                    setOpeningBalance(val);
                   }}
-                  onBlur={() => saveInitialBalance(initialBalanceJan)}
+                  onBlur={() => saveInitialBalance(openingBalance)}
                 />
               </div>
             ) : (

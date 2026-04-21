@@ -109,21 +109,47 @@ export const api = express.Router();
     }
   });
 
-  // Initial Balance per month/year
-  api.get('/initial-balance', async (req, res) => {
+  // Opening Balance (Carry-over)
+  api.get('/opening-balance', async (req, res) => {
     try {
       const company_id = req.headers['x-company-id'] || 1;
-      const { year, month } = req.query;
-      const { data, error } = await supabase
+      const { year, month } = req.query; // month 0-11
+      const y = parseInt(year as string);
+      const m = parseInt(month as string);
+
+      // 1. Get Jan manual initial balance
+      const { data: janData } = await supabase
         .from('initial_balances')
         .select('amount')
         .eq('company_id', company_id)
-        .eq('year', year)
-        .eq('month', month)
+        .eq('year', y)
+        .eq('month', 0)
         .maybeSingle();
+      
+      const janInitial = Number(janData?.amount || 0);
 
-      if (error) throw error;
-      res.json({ amount: data?.amount || 0 });
+      if (m === 0) return res.json({ amount: janInitial });
+
+      // 2. Sum all paid transactions BEFORE start of month m, year y
+      // start of month m is YYYY-MM-01
+      const startDate = `${y}-01-01`; // From start of year
+      const targetDate = `${y}-${String(m + 1).padStart(2, '0')}-01`;
+
+      const { data: txs, error: txError } = await supabase
+        .from('transactions')
+        .select('type, amount')
+        .eq('company_id', company_id)
+        .gte('payment_date', startDate)
+        .lt('payment_date', targetDate);
+
+      if (txError) throw txError;
+
+      const sum = (txs || []).reduce((acc, tx) => {
+        const val = Number(tx.amount || 0);
+        return tx.type === 'income' ? acc + val : acc - val;
+      }, 0);
+
+      res.json({ amount: janInitial + sum });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
