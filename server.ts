@@ -99,7 +99,8 @@ export const api = express.Router();
         bank_account_name: t.bank_account?.name,
         classification: t.classification,
         description: t.description || t.notes,
-        paymentDate: t.payment_date, // Novo campo do banco
+        paymentDate: t.payment_date, 
+        paymentMethod: t.payment_method, // Novo mapeamento
         saved: true
       }));
 
@@ -189,8 +190,8 @@ export const api = express.Router();
   api.post('/transactions', async (req, res) => {
     try {
       const { 
-        id, date, type, amount, contact_id, contact_type, status, due_date, competence, notes,
         description, classification, cost_center_name, installment, payment_date, paymentDate,
+        paymentMethod, payment_method, 
         cost_center_id, project_id, bank_account_id
       } = req.body;
       const company_id = req.headers['x-company-id'] || 1;
@@ -203,6 +204,7 @@ export const api = express.Router();
         contact_type: sanitizeId(contact_type), status, due_date, competence, notes,
         description, classification, cost_center_name, installment, 
         payment_date: payment_date || paymentDate || null,
+        payment_method: payment_method || paymentMethod || null, // Persistência
         cost_center_id: sanitizeId(cost_center_id), 
         project_id: sanitizeId(project_id), 
         bank_account_id: sanitizeId(bank_account_id),

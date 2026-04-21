@@ -323,8 +323,10 @@ export default function Transactions() {
   const updateRow = (id: string, patch: Partial<Row>) =>
     setRows(rs => rs.map(r => {
       if (r.id !== id) return r;
-      // Se alterou a data, desmarca como 'salvo' para exigir confirmação antes de migrar
-      const newSaved = (patch.date !== undefined || patch.paymentDate !== undefined) ? false : (patch.saved ?? r.saved);
+      // Qualquer alteração nos campos deve habilitar o botão de salvar (saved = false)
+      // A menos que estejamos explicitamente definindo saved: true após o sucesso do banco.
+      const isExplicitSave = patch.saved === true;
+      const newSaved = isExplicitSave ? true : false;
       return { ...r, ...patch, saved: newSaved };
     }));
 
@@ -350,7 +352,8 @@ export default function Transactions() {
           ...row,
           amount: parseBRL(row.amount),
           cost_center_name: row.costCenter,
-          payment_date: row.paymentDate || null
+          payment_date: row.paymentDate || null,
+          payment_method: row.paymentMethod || null
         })
       });
       
