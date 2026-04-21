@@ -190,6 +190,7 @@ export const api = express.Router();
   api.post('/transactions', async (req, res) => {
     try {
       const { 
+        id, date, type, amount, contact_id, contact_type, status, due_date, competence, notes,
         description, classification, cost_center_name, installment, payment_date, paymentDate,
         paymentMethod, payment_method, 
         cost_center_id, project_id, bank_account_id
