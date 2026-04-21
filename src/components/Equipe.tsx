@@ -60,7 +60,7 @@ export default function Equipe() {
       return;
     }
     try {
-      const res = await apiFetch('/api/team/invite', {
+      await apiFetch('/api/team/invite', {
         method: 'POST',
         body: JSON.stringify({
           ...inviteData,
@@ -69,11 +69,7 @@ export default function Equipe() {
         })
       });
       
-      if (res.emailStatus === 'simulated') {
-        toast.warning('Convite criado, mas e-mail APENAS SIMULADO. Verifique a RESEND_API_KEY na Vercel.');
-      } else {
-        toast.success('Convite enviado com sucesso!');
-      }
+      toast.success('Convite enviado com sucesso!');
       
       setIsInviteModalOpen(false);
       setInviteData({ name: '', email: '', modules: [] });
@@ -85,7 +81,7 @@ export default function Equipe() {
 
   const handleResendInvite = async (member: Member) => {
     try {
-      const res = await apiFetch('/api/team/resend-invite', {
+      await apiFetch('/api/team/resend-invite', {
         method: 'POST',
         body: JSON.stringify({
           email: member.email,
@@ -94,11 +90,7 @@ export default function Equipe() {
         })
       });
       
-      if (res.emailStatus === 'simulated') {
-        toast.warning('Ação realizada, mas e-mail APENAS SIMULADO. Verifique a RESEND_API_KEY na Vercel.');
-      } else {
-        toast.success('Convite reenviado!');
-      }
+      toast.success('Convite reenviado com sucesso!');
     } catch (error) {
       toast.error('Erro ao reenviar convite.');
     }

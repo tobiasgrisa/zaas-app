@@ -2,12 +2,11 @@
 import express from 'express';
 import path from 'path';
 import { supabase } from './lib/supabase.js';
-import { Resend } from 'resend';
+const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
 
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-
-if (!resend) {
-  console.warn('RESEND_API_KEY não encontrada. O envio de e-mails será simulado no console.');
+if (!supabaseUrl || !supabaseKey) {
+  console.error('[supabase] Missing SUPABASE_URL or key environment variables.');
 }
 
 export const app = express();
@@ -427,27 +426,21 @@ export const api = express.Router();
 
       if (inviteError) throw inviteError;
 
-      // Send Email
-      const inviteLink = `${process.env.APP_URL || 'http://localhost:3000'}/signup`;
-
-      if (process.env.RESEND_API_KEY && resend) {
-        await resend.emails.send({
-          from: 'EngERP <noreply@zass.com.br>',
-          to: email,
-          subject: 'Convite para participar da equipe no EngERP',
-          html: `
-            <p>Olá ${name},</p>
-            <p>Você foi convidado para participar da equipe da empresa <strong>${company_name}</strong> no sistema EngERP.</p>
-            <p>Para se cadastrar, acesse o link abaixo e informe o CNPJ da empresa quando solicitado.</p>
-            <a href="${inviteLink}">${inviteLink}</a>
-          `
-        });
-      }
-      
-      res.json({ 
-        success: true, 
-        emailStatus: (process.env.RESEND_API_KEY && resend) ? 'sent' : 'simulated' 
+      // 2. Trigger Supabase Invite Email
+      // This sends a native Supabase invitation email
+      const appUrl = process.env.APP_URL || 'http://localhost:3000';
+      const { error: authInviteError } = await supabase.auth.admin.inviteUserByEmail(email, {
+        redirectTo: `${appUrl}/signup`,
+        data: { name }
       });
+
+      if (authInviteError) {
+        console.error('[Supabase Invite Error]', authInviteError);
+        // We don't throw here because the invitation record was already created
+        // and users can still register manually with that email/cnpj combo
+      }
+
+      res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -514,29 +507,18 @@ export const api = express.Router();
   });
 
   // Resend Invite
+  // Resend Invite (via Supabase)
   api.post('/team/resend-invite', async (req, res) => {
-    const { email, name, company_name } = req.body;
+    const { email, name } = req.body;
     try {
-      const inviteLink = `${process.env.APP_URL || 'http://localhost:3000'}/signup`;
-      
-      if (process.env.RESEND_API_KEY && resend) {
-        await resend.emails.send({
-          from: 'EngERP <noreply@zass.com.br>',
-          to: email,
-          subject: 'Reenvio de convite: Equipe EngERP',
-          html: `
-            <p>Olá ${name},</p>
-            <p>Estamos reenviando seu convite para participar da equipe <strong>${company_name}</strong> no EngERP.</p>
-            <p>Acesse o link abaixo para completar seu cadastro:</p>
-            <a href="${inviteLink}">${inviteLink}</a>
-          `
-        });
-      }
-      
-      res.json({ 
-        success: true, 
-        emailStatus: (process.env.RESEND_API_KEY && resend) ? 'sent' : 'simulated' 
+      const appUrl = process.env.APP_URL || 'http://localhost:3000';
+      const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
+        redirectTo: `${appUrl}/signup`,
+        data: { name }
       });
+      
+      if (error) throw error;
+      res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
