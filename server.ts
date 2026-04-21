@@ -281,7 +281,10 @@ export const api = express.Router();
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { name: adminName } }
+        options: { 
+          data: { name: adminName },
+          emailRedirectTo: 'https://zaas-app.vercel.app/'
+        }
       });
 
       if (authError) throw authError;
@@ -362,7 +365,10 @@ export const api = express.Router();
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { name } }
+        options: { 
+          data: { name },
+          emailRedirectTo: 'https://zaas-app.vercel.app/'
+        }
       });
 
       if (authError) throw authError;
