@@ -392,18 +392,25 @@ export const api = express.Router();
     }
   });
 
-  // List Team Members
+  // List Team Members (Profiles + Invitations)
   api.get('/team/members', async (req, res) => {
     const { company_id } = req.query;
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('company_id', company_id)
-        .order('created_at', { ascending: true });
+      const [profilesRes, invitationsRes] = await Promise.all([
+        supabase.from('profiles').select('*').eq('company_id', company_id).order('created_at', { ascending: true }),
+        supabase.from('invitations').select('*').eq('company_id', company_id).order('created_at', { ascending: true })
+      ]);
 
-      if (error) throw error;
-      res.json(data);
+      if (profilesRes.error) throw profilesRes.error;
+      if (invitationsRes.error) throw invitationsRes.error;
+
+      // Merge results
+      const members = [
+        ...profilesRes.data.map(p => ({ ...p, type: 'profile' })),
+        ...invitationsRes.data.map(i => ({ ...i, type: 'invitation', status: i.status === 'sent' ? 'invitation_sent' : i.status }))
+      ];
+
+      res.json(members);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -416,7 +423,7 @@ export const api = express.Router();
       // Save invitation
       const { error: inviteError } = await supabase
         .from('invitations')
-        .upsert([{ email, company_id, modules }], { onConflict: 'email, company_id' });
+        .upsert([{ email, company_id, modules, name, status: 'sent' }], { onConflict: 'email, company_id' });
 
       if (inviteError) throw inviteError;
 
@@ -482,15 +489,48 @@ export const api = express.Router();
     }
   });
 
-  // Remove Member
+  // Remove Member (Soft Delete)
   api.post('/team/remove', async (req, res) => {
-    const { profile_id } = req.body;
+    const { id, type } = req.body; // id can be profile_id or invitation_id
     try {
-      // Delete from Auth and Profiles
-      await supabase.auth.admin.deleteUser(profile_id);
-      const { error } = await supabase.from('profiles').delete().eq('id', profile_id);
+      if (type === 'profile') {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ status: 'deleted', modules: [] })
+          .eq('id', id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('invitations')
+          .update({ status: 'canceled', modules: [] })
+          .eq('id', id);
+        if (error) throw error;
+      }
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Resend Invite
+  api.post('/team/resend-invite', async (req, res) => {
+    const { email, name, company_name } = req.body;
+    try {
+      const inviteLink = `${process.env.APP_URL || 'http://localhost:3000'}/signup`;
       
-      if (error) throw error;
+      if (process.env.RESEND_API_KEY && resend) {
+        await resend.emails.send({
+          from: 'EngERP <noreply@zass.com.br>',
+          to: email,
+          subject: 'Reenvio de convite: Equipe EngERP',
+          html: `
+            <p>Olá ${name},</p>
+            <p>Estamos reenviando seu convite para participar da equipe <strong>${company_name}</strong> no EngERP.</p>
+            <p>Acesse o link abaixo para completar seu cadastro:</p>
+            <a href="${inviteLink}">${inviteLink}</a>
+          `
+        });
+      }
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });

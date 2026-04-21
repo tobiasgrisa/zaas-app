@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { UserPlus, Mail, Shield, Clock, CheckCircle2, XCircle, Search, Trash2, ChevronDown, Check } from 'lucide-react';
+import { UserPlus, Mail, Shield, Clock, CheckCircle2, XCircle, Search, Trash2, ChevronDown, Check, Send, Edit2, RotateCw } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { apiFetch } from '@/lib/api';
 
@@ -13,7 +13,8 @@ interface Member {
   name: string;
   email: string;
   role: 'master' | 'member';
-  status: 'pending' | 'approved';
+  status: 'pending' | 'approved' | 'deleted' | 'invitation_sent' | 'canceled';
+  type: 'profile' | 'invitation';
   modules: string[];
   created_at: string;
 }
@@ -70,48 +71,66 @@ export default function Equipe() {
       toast.success('Convite enviado com sucesso!');
       setIsInviteModalOpen(false);
       setInviteData({ name: '', email: '', modules: [] });
+      fetchMembers();
     } catch (error: any) {
       toast.error(error.message);
     }
   };
 
-  const handleApprove = async (id: string, status: 'approved' | 'rejected') => {
+  const handleResendInvite = async (member: Member) => {
     try {
-      await apiFetch('/api/team/approve', {
+      await apiFetch('/api/team/resend-invite', {
         method: 'POST',
-        body: JSON.stringify({ profile_id: id, status })
+        body: JSON.stringify({
+          email: member.email,
+          name: member.name,
+          company_name: user.company_name || 'Minha Empresa'
+        })
       });
-      toast.success(status === 'approved' ? 'Acesso aprovado!' : 'Acesso recusado.');
-      fetchMembers();
+      toast.success('Convite reenviado!');
     } catch (error) {
-      toast.error('Erro ao processar aprovação.');
+      toast.error('Erro ao reenviar convite.');
     }
   };
 
-  const handleRemove = async (id: string) => {
-    if (!confirm('Deseja realmente excluir este membro? Esta ação é irreversível.')) return;
+  const handleRemove = async (id: string, type: 'profile' | 'invitation') => {
+    const msg = type === 'profile' ? 'Deseja realmente desativar este membro?' : 'Deseja realmente cancelar este convite?';
+    if (!confirm(msg)) return;
     try {
       await apiFetch('/api/team/remove', {
         method: 'POST',
-        body: JSON.stringify({ profile_id: id })
+        body: JSON.stringify({ id, type })
       });
-      toast.success('Membro removido com sucesso.');
+      toast.success(type === 'profile' ? 'Membro desativado.' : 'Convite cancelado.');
       fetchMembers();
     } catch (error) {
-      toast.error('Erro ao remover membro.');
+      toast.error('Erro ao processar solicitação.');
     }
   };
 
-  const toggleModule = async (memberId: string, moduleId: string, currentModules: string[]) => {
+  const toggleModule = async (memberId: string, moduleId: string, currentModules: string[], type: 'profile' | 'invitation') => {
     const newModules = currentModules.includes(moduleId)
       ? currentModules.filter(m => m !== moduleId)
       : [...currentModules, moduleId];
     
     try {
-      await apiFetch('/api/team/update-modules', {
-        method: 'POST',
-        body: JSON.stringify({ profile_id: memberId, modules: newModules })
-      });
+      if (type === 'profile') {
+        await apiFetch('/api/team/update-modules', {
+          method: 'POST',
+          body: JSON.stringify({ profile_id: memberId, modules: newModules })
+        });
+      } else {
+        // Reuse invite logic to update invitation modules
+        await apiFetch('/api/team/invite', {
+          method: 'POST',
+          body: JSON.stringify({ 
+            email: members.find(m => m.id === memberId)?.email,
+            name: members.find(m => m.id === memberId)?.name,
+            company_id,
+            modules: newModules 
+          })
+        });
+      }
       setMembers(members.map(m => m.id === memberId ? { ...m, modules: newModules } : m));
     } catch (error) {
       toast.error('Erro ao atualizar permissões.');
@@ -123,16 +142,30 @@ export default function Equipe() {
     m.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const pendingMembers = filteredMembers.filter(m => m.status === 'pending');
-  // Hide Master user (the current user) from the list as requested
-  const activeMembers = filteredMembers.filter(m => m.status === 'approved' && m.id !== user.id);
+  const activeMembers = filteredMembers.filter(m => m.id !== user.id);
+
+  const getStatusBadge = (status: Member['status']) => {
+    switch (status) {
+      case 'approved':
+        return <div className="flex items-center gap-2 text-emerald-500"><div className="w-2 h-2 rounded-full bg-emerald-500" /> <span className="text-[10px] font-black uppercase">Ativo</span></div>;
+      case 'pending':
+        return <div className="flex items-center gap-2 text-amber-500"><Clock size={12} /> <span className="text-[10px] font-black uppercase">Pendente</span></div>;
+      case 'invitation_sent':
+        return <div className="flex items-center gap-2 text-blue-500"><Send size={12} /> <span className="text-[10px] font-black uppercase">Convite Enviado</span></div>;
+      case 'deleted':
+      case 'canceled':
+        return <div className="flex items-center gap-2 text-slate-500 transition-all group-hover:text-rose-500"><XCircle size={12} /> <span className="text-[10px] font-black uppercase">Excluído</span></div>;
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-black text-white tracking-tight">Equipe</h2>
-          <p className="text-slate-500 mt-1 font-medium">Gerencie o acesso dos membros à sua empresa.</p>
+          <p className="text-slate-500 mt-1 font-medium">Gerencie o acesso e permissões dos membros da sua empresa.</p>
         </div>
         <Button 
           onClick={() => setIsInviteModalOpen(true)}
@@ -153,62 +186,13 @@ export default function Equipe() {
         />
       </div>
 
-      {pendingMembers.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-sm font-black uppercase text-amber-500 tracking-widest flex items-center gap-2">
-            <Clock size={16} />
-            Aprovações Pendentes
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {pendingMembers.map((member) => (
-              <Card key={member.id} className="bg-[#111114] border-white/5 shadow-2xl rounded-[2rem] overflow-hidden border-l-4 border-l-amber-500">
-                <CardContent className="p-8">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 font-bold border border-amber-500/20">
-                      {member.name ? member.name[0].toUpperCase() : member.email[0].toUpperCase()}
-                    </div>
-                    <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20 px-3 py-1 rounded-lg">Pendente</Badge>
-                  </div>
-                  <h4 className="text-lg font-bold text-white mb-1">{member.name || 'Sem nome'}</h4>
-                  <p className="text-slate-500 text-sm mb-6 flex items-center gap-2">
-                    <Mail size={14} />
-                    {member.email}
-                  </p>
-                  <div className="flex gap-2">
-                    <Button 
-                      onClick={() => handleApprove(member.id, 'approved')}
-                      className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl h-10 gap-2"
-                    >
-                      <CheckCircle2 size={16} />
-                      Aprovar
-                    </Button>
-                    <Button 
-                      onClick={() => handleApprove(member.id, 'rejected')}
-                      variant="ghost" 
-                      className="flex-1 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 font-bold rounded-xl h-10 gap-2"
-                    >
-                      <XCircle size={16} />
-                      Recusar
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
       <div className="space-y-4">
-        <h3 className="text-sm font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
-          <Shield size={16} />
-          Equipe Ativa
-        </h3>
         <div className="bg-[#111114] border border-white/5 rounded-[2rem] overflow-hidden shadow-2xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-white/5 bg-white/[0.02]">
-                  <th className="px-8 py-5 text-xs font-black uppercase text-slate-500 tracking-widest">Nome</th>
+                  <th className="px-8 py-5 text-xs font-black uppercase text-slate-500 tracking-widest">Membro</th>
                   <th className="px-8 py-5 text-xs font-black uppercase text-slate-500 tracking-widest">E-mail</th>
                   <th className="px-8 py-5 text-xs font-black uppercase text-slate-500 tracking-widest">Nível / Módulos</th>
                   <th className="px-8 py-5 text-xs font-black uppercase text-slate-500 tracking-widest">Status</th>
@@ -218,14 +202,23 @@ export default function Equipe() {
               <tbody>
                 {activeMembers.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-8 py-10 text-center text-slate-500 italic">Nenhum membro convidado ainda.</td>
+                    <td colSpan={5} className="px-8 py-20 text-center">
+                      <div className="flex flex-col items-center gap-4 text-slate-600">
+                        <Shield size={48} className="opacity-20" />
+                        <p className="font-medium italic">Nenhum membro ou convite encontrado.</p>
+                      </div>
+                    </td>
                   </tr>
                 ) : (
                   activeMembers.map((member) => (
-                    <tr key={member.id} className="border-b border-white/5 hover:bg-white/[0.01] transition-colors group">
+                    <tr key={member.id} className={`border-b border-white/5 hover:bg-white/[0.01] transition-colors group ${member.status === 'deleted' || member.status === 'canceled' ? 'opacity-50' : ''}`}>
                       <td className="px-8 py-6">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-500 font-bold border border-indigo-500/20">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold border ${
+                            member.status === 'deleted' || member.status === 'canceled' 
+                            ? 'bg-slate-500/5 text-slate-600 border-slate-500/10' 
+                            : 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20'
+                          }`}>
                             {member.name?.[0].toUpperCase() || member.email[0].toUpperCase()}
                           </div>
                           <span className="font-bold text-white group-hover:text-indigo-400 transition-colors">{member.name || 'Sem nome'}</span>
@@ -234,8 +227,14 @@ export default function Equipe() {
                       <td className="px-8 py-6 text-slate-400 font-medium">{member.email}</td>
                       <td className="px-8 py-6 relative">
                         <div 
-                          onClick={() => setOpenSelectId(openSelectId === member.id ? null : member.id)}
-                          className="flex items-center justify-between gap-2 bg-[#16161a] border border-white/5 px-4 py-2 rounded-xl cursor-pointer hover:border-indigo-500/30 transition-all min-w-[200px]"
+                          onClick={() => {
+                            if (member.status !== 'deleted' && member.status !== 'canceled') {
+                              setOpenSelectId(openSelectId === member.id ? null : member.id);
+                            }
+                          }}
+                          className={`flex items-center justify-between gap-2 bg-[#16161a] border border-white/5 px-4 py-2 rounded-xl transition-all min-w-[180px] ${
+                            member.status === 'deleted' || member.status === 'canceled' ? 'cursor-not-allowed opacity-30' : 'cursor-pointer hover:border-indigo-500/30'
+                          }`}
                         >
                           <div className="flex flex-wrap gap-1">
                             {member.modules?.length > 0 ? (
@@ -245,10 +244,10 @@ export default function Equipe() {
                                 </span>
                               ))
                             ) : (
-                              <span className="text-slate-500 text-xs italic">Nenhum acesso</span>
+                              <span className="text-slate-500 text-[10px] uppercase font-bold">Sem Acesso</span>
                             )}
                           </div>
-                          <ChevronDown size={16} className="text-slate-500" />
+                          <ChevronDown size={14} className="text-slate-500" />
                         </div>
 
                         {openSelectId === member.id && (
@@ -258,7 +257,7 @@ export default function Equipe() {
                               {AVAILABLE_MODULES.map((mod) => (
                                 <div 
                                   key={mod.id}
-                                  onClick={() => toggleModule(member.id, mod.id, member.modules || [])}
+                                  onClick={() => toggleModule(member.id, mod.id, member.modules || [], member.type)}
                                   className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/5 cursor-pointer transition-colors"
                                 >
                                   <span className="text-sm font-bold text-slate-300">{mod.label}</span>
@@ -270,20 +269,40 @@ export default function Equipe() {
                         )}
                       </td>
                       <td className="px-8 py-6">
-                        <div className="flex items-center gap-2 text-emerald-500">
-                          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                          <span className="text-sm font-bold">Ativo</span>
-                        </div>
+                        {getStatusBadge(member.status)}
                       </td>
                       <td className="px-8 py-6 text-right">
-                        <Button 
-                          onClick={() => handleRemove(member.id)}
-                          variant="ghost" 
-                          size="icon" 
-                          className="text-slate-600 hover:text-rose-500 hover:bg-rose-500/10 rounded-full transition-all"
-                        >
-                          <Trash2 size={18} />
-                        </Button>
+                        <div className="flex items-center justify-end gap-1">
+                          {member.status === 'invitation_sent' && (
+                            <Button 
+                              onClick={() => handleResendInvite(member)}
+                              variant="ghost" 
+                              size="icon" 
+                              title="Reenviar Convite"
+                              className="text-blue-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-full h-9 w-9 transition-all"
+                            >
+                              <RotateCw size={16} />
+                            </Button>
+                          )}
+                          <Button 
+                            onClick={() => setOpenSelectId(openSelectId === member.id ? null : member.id)}
+                            variant="ghost" 
+                            size="icon" 
+                            disabled={member.status === 'deleted' || member.status === 'canceled'}
+                            className="text-slate-400 hover:text-white hover:bg-white/5 rounded-full h-9 w-9 transition-all"
+                          >
+                            <Edit2 size={16} />
+                          </Button>
+                          <Button 
+                            onClick={() => handleRemove(member.id, member.type)}
+                            variant="ghost" 
+                            size="icon" 
+                            disabled={member.status === 'deleted' || member.status === 'canceled'}
+                            className="text-slate-600 hover:text-rose-500 hover:bg-rose-500/10 rounded-full h-9 w-9 transition-all"
+                          >
+                            <Trash2 size={16} />
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -364,5 +383,3 @@ export default function Equipe() {
     </div>
   );
 }
-
-const cn = (...classes: any[]) => classes.filter(Boolean).join(' ');
