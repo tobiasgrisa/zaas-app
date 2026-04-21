@@ -96,15 +96,15 @@ export default function Equipe() {
     }
   };
 
-  const handleRemove = async (id: string, type: 'profile' | 'invitation') => {
-    const msg = type === 'profile' ? 'Deseja realmente desativar este membro?' : 'Deseja realmente cancelar este convite?';
+  const handleRemove = async (id: string, type: 'profile' | 'invitation', email?: string) => {
+    const msg = type === 'profile' ? 'Deseja realmente EXCLUIR este membro? Esta ação é permanente e liberará o e-mail para novo convite.' : 'Deseja realmente EXCLUIR este convite?';
     if (!confirm(msg)) return;
     try {
       await apiFetch('/api/team/remove', {
         method: 'POST',
-        body: JSON.stringify({ id, type })
+        body: JSON.stringify({ id, type, email })
       });
-      toast.success(type === 'profile' ? 'Membro desativado.' : 'Convite cancelado.');
+      toast.success(type === 'profile' ? 'Membro excluído.' : 'Convite excluído.');
       fetchMembers();
     } catch (error) {
       toast.error('Erro ao processar solicitação.');
@@ -157,7 +157,7 @@ export default function Equipe() {
         return <div className="flex items-center gap-2 text-blue-500"><Send size={12} /> <span className="text-[10px] font-black uppercase">Convite Enviado</span></div>;
       case 'deleted':
       case 'canceled':
-        return <div className="flex items-center gap-2 text-slate-500 transition-all group-hover:text-rose-500"><XCircle size={12} /> <span className="text-[10px] font-black uppercase">Excluído</span></div>;
+        return null; // These shouldn't exist anymore in the list due to hard delete
       default:
         return null;
     }
@@ -297,11 +297,11 @@ export default function Equipe() {
                             <Edit2 size={16} />
                           </Button>
                           <Button 
-                            onClick={() => handleRemove(member.id, member.type)}
+                            onClick={() => handleRemove(member.id, member.type, member.email)}
                             variant="ghost" 
                             size="icon" 
-                            disabled={member.status === 'deleted' || member.status === 'canceled'}
-                            className="text-slate-600 hover:text-rose-500 hover:bg-rose-500/10 rounded-full h-9 w-9 transition-all"
+                            className="text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-full h-9 w-9 transition-all"
+                            title="Excluir Permanentemente"
                           >
                             <Trash2 size={16} />
                           </Button>

@@ -482,21 +482,46 @@ export const api = express.Router();
     }
   });
 
-  // Remove Member (Soft Delete)
+  // Remove Member (Hard Delete to liberate email)
   api.post('/team/remove', async (req, res) => {
-    const { id, type } = req.body; // id can be profile_id or invitation_id
+    const { id, type, email } = req.body; // id can be profile_id or invitation_id
     try {
       if (type === 'profile') {
-        const { error } = await supabase
+        // 1. Delete from Supabase Auth first
+        const { error: authError } = await supabase.auth.admin.deleteUser(id);
+        if (authError) {
+          console.error('[Supabase Auth Delete Error]', authError);
+          // We continue because the user might have been deleted manually already
+        }
+        
+        // 2. Delete from Profiles table
+        const { error: profError } = await supabase
           .from('profiles')
-          .update({ status: 'deleted', modules: [] })
+          .delete()
           .eq('id', id);
-        if (error) throw error;
+        
+        if (profError) throw profError;
       } else {
+        // For invitations, we try to clean up Auth if a user record was pre-created
+        if (email) {
+          try {
+            // Find user in auth to delete them and free the email
+            const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
+            const targetUser = users?.find(u => u.email === email);
+            if (targetUser) {
+              await supabase.auth.admin.deleteUser(targetUser.id);
+            }
+          } catch (e) {
+            console.error('Falha ao limpar usuário de convite do Auth:', e);
+          }
+        }
+
+        // Delete from Invitations table
         const { error } = await supabase
           .from('invitations')
-          .update({ status: 'canceled', modules: [] })
+          .delete()
           .eq('id', id);
+          
         if (error) throw error;
       }
       res.json({ success: true });
