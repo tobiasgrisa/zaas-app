@@ -189,21 +189,14 @@ export const api = express.Router();
         .select()
         .single();
 
-      if (error) throw error;
-
-      // Update bank balance if completed
-      if (status === 'completed' && bank_account_id) {
-        const multiplier = type === 'income' ? 1 : -1;
-        const change = Number(amount) * multiplier;
-
-        await supabase.rpc('increment_balance', {
-          account_id: bank_account_id,
-          amount_change: change
-        });
+      if (error) {
+        console.error('[transactions] Save error:', error);
+        return res.status(500).json({ error: error.message });
       }
 
       res.json({ id: data.id });
     } catch (error: any) {
+      console.error('[transactions] Unexpected error:', error);
       res.status(500).json({ error: error.message });
     }
   });

@@ -358,7 +358,7 @@ export default function Transactions() {
     if (!row) return;
 
     try {
-      await apiFetch('/api/transactions', {
+      const resp = await apiFetch('/api/transactions', {
         method: 'POST',
         body: JSON.stringify({
           ...row,
@@ -368,10 +368,12 @@ export default function Transactions() {
         })
       });
       
+      if (resp?.error) throw new Error(resp.error);
+
       toast.success('Lançamento salvo!');
       loadTransactions();
-    } catch {
-      toast.error('Erro ao salvar lançamento');
+    } catch (error: any) {
+      toast.error(`Erro ao salvar: ${error.message || 'Falha na conexão'}`);
     }
   };
 
