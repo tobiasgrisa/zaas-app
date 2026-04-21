@@ -18,7 +18,6 @@ import Clients from '@/src/components/Clients';
 import CostCenter from '@/src/components/CostCenter';
 import CashFlow from '@/src/components/CashFlow';
 import Reports from '@/src/components/Reports';
-import Equipe from '@/src/components/Equipe';
 
 function Registrations() {
   return (
@@ -130,7 +129,6 @@ export default function App() {
       case 'cost-center': return <CostCenter />;
       case 'projects': return <Projects />;
       case 'reports': return <Reports />;
-      case 'team': return <Equipe />;
       case 'settings': return <Settings />;
       default: return <Dashboard />;
     }

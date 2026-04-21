@@ -19,7 +19,6 @@ const menuItems = [
     ]
   },
   { id: 'projects', label: 'Obras', icon: Building2 },
-  { id: 'team', label: 'Equipe', icon: Users2 },
 ];
 
 interface LayoutProps {

@@ -441,8 +441,9 @@ export const api = express.Router();
 
       if (authInviteError) {
         console.error('[Supabase Invite Error]', authInviteError);
-        // We don't throw here because the invitation record was already created
-        // and users can still register manually with that email/cnpj combo
+        // Throwing the error ensures it's returned as 500 to the frontend
+        // so the user sees the real reason for failure (rate limit, etc)
+        throw new Error(`Supabase Auth: ${authInviteError.message}`);
       }
 
       res.json({ success: true });
@@ -511,11 +512,14 @@ export const api = express.Router();
         // For invitations, we try to clean up Auth if a user record was pre-created
         if (email) {
           try {
-            // Find user in auth to delete them and free the email
-            const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
-            const targetUser = users?.find(u => u.email === email);
+            // Hardened: list more users to ensure we find the one to liberate
+            const { data: { users }, error: listError } = await supabase.auth.admin.listUsers({
+              perPage: 1000 // Ensure we don't miss users in larger systems
+            });
+            const targetUser = users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
             if (targetUser) {
               await supabase.auth.admin.deleteUser(targetUser.id);
+              console.log(`[ACL] Usuário de convite ${email} removido do Auth para liberação.`);
             }
           } catch (e) {
             console.error('Falha ao limpar usuário de convite do Auth:', e);
@@ -546,7 +550,10 @@ export const api = express.Router();
         data: { name }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('[Supabase Resend Invite Error]', error);
+        throw new Error(`Supabase Auth: ${error.message}`);
+      }
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
