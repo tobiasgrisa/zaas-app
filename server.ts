@@ -147,6 +147,17 @@ export const api = express.Router();
     }
   });
 
+  api.delete('/transactions/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { error } = await supabase.from('transactions').delete().eq('id', id);
+      if (error) throw error;
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   api.post('/transactions', async (req, res) => {
     try {
       const { date, type, amount, contact_id, contact_type, cost_center_id, project_id, bank_account_id, status, due_date, competence, notes } = req.body;

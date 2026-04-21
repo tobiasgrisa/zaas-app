@@ -237,10 +237,22 @@ export default function Transactions() {
         setInstallTotal(n);
         
         const dates: string[] = [];
-        const baseDate = new Date(row.date ? row.date + 'T12:00:00' : new Date().toISOString().split('T')[0] + 'T12:00:00');
+        // Usamos uma lógica mais segura para não pular meses (ex: de 31/jan para março)
+        const parts = (row.date || today()).split('-');
+        let y = parseInt(parts[0]);
+        let m = parseInt(parts[1]) - 1; // 0-based
+        let d = parseInt(parts[2]);
+
         for (let i = 2; i <= n; i++) {
-          const dt = new Date(baseDate.getTime());
-          dt.setMonth(dt.getMonth() + (i - 1));
+          let nextM = m + (i - 1);
+          let nextY = y + Math.floor(nextM / 12);
+          nextM = nextM % 12;
+          
+          // Ajusta o dia se o mês seguinte for mais curto
+          const lastDayOfNextMonth = new Date(nextY, nextM + 1, 0).getDate();
+          const targetD = Math.min(d, lastDayOfNextMonth);
+          
+          const dt = new Date(nextY, nextM, targetD, 12, 0, 0);
           dates.push(dt.toISOString().split('T')[0]);
         }
         setInstallDates(dates);
@@ -252,18 +264,24 @@ export default function Transactions() {
   const generateInstallments = async () => {
     if (!installRow) return;
     
+    // 1. Salvar a primeira parcela no banco imediatamente para garantir que ela exista com o novo status X/N
+    try {
+      await saveRow(installRow.id);
+    } catch (e) {
+      console.error('Erro ao salvar parcela 1/N inicial', e);
+    }
+
     const installments = [];
-    
     for (let i = 2; i <= installTotal; i++) {
       const pDate = installDates[i - 2];
-      
       const nr = { 
         ...installRow,
+        id: undefined, // Deixa o banco gerar novo ID
         installment: `${i}/${installTotal}`,
         date: pDate,
         paymentDate: '',
+        saved: true
       };
-      
       installments.push(nr);
     }
     
@@ -275,10 +293,10 @@ export default function Transactions() {
         })
       ));
       
-      toast.success(`${installTotal - 1} parcelas agendadas com sucesso!`);
+      toast.success(`${installTotal - 1} parcelas futuras agendadas com sucesso!`);
       loadTransactions();
     } catch {
-      toast.error('Erro ao agendar parcelas');
+      toast.error('Erro ao agendar parcelas futuras');
     }
     
     setInstallModalOpen(false);
@@ -615,8 +633,12 @@ export default function Transactions() {
                 <span className="text-[10px] uppercase text-slate-500">Saldo Inicial</span>
                 <input
                   className="w-full bg-indigo-500/10 border border-indigo-500/20 rounded px-2 py-1 text-xs font-bold text-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  value={maskBRL(initialBalanceJan.toFixed(2).replace('.', ''))}
-                  onChange={(e) => setInitialBalanceJan(parseBRL(e.target.value))}
+                  value={fmtBRL(initialBalanceJan)}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, '');
+                    const val = digits ? parseFloat(digits) / 100 : 0;
+                    setInitialBalanceJan(val);
+                  }}
                   onBlur={() => saveInitialBalance(initialBalanceJan)}
                 />
               </div>
