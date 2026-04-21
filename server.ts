@@ -442,11 +442,12 @@ export const api = express.Router();
             <a href="${inviteLink}">${inviteLink}</a>
           `
         });
-      } else {
-        console.log(`[MOCK EMAIL] To: ${email}, Link: ${inviteLink}`);
       }
-
-      res.json({ success: true });
+      
+      res.json({ 
+        success: true, 
+        emailStatus: (process.env.RESEND_API_KEY && resend) ? 'sent' : 'simulated' 
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -531,7 +532,11 @@ export const api = express.Router();
           `
         });
       }
-      res.json({ success: true });
+      
+      res.json({ 
+        success: true, 
+        emailStatus: (process.env.RESEND_API_KEY && resend) ? 'sent' : 'simulated' 
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
