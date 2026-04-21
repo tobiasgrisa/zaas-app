@@ -94,10 +94,11 @@ export const api = express.Router();
       // Map for frontend compatibility
       const mapped = data.map(t => ({
         ...t,
-        costCenter: t.cost_center?.name,
+        costCenter: t.cost_center_name || t.cost_center?.name,
         project_name: t.project?.name,
         bank_account_name: t.bank_account?.name,
-        classification: t.cost_center?.name, // Temporary mapping if needed
+        classification: t.classification,
+        description: t.description || t.notes,
         saved: true
       }));
 
@@ -160,14 +161,21 @@ export const api = express.Router();
 
   api.post('/transactions', async (req, res) => {
     try {
-      const { date, type, amount, contact_id, contact_type, cost_center_id, project_id, bank_account_id, status, due_date, competence, notes } = req.body;
+      const { 
+        id, date, type, amount, contact_id, contact_type, status, due_date, competence, notes,
+        description, classification, cost_center_name, installment, cost_center_id, project_id, bank_account_id
+      } = req.body;
       const company_id = req.headers['x-company-id'] || 1;
+
+      const payload = {
+        date, type, amount, contact_id, contact_type, status, due_date, competence, notes,
+        description, classification, cost_center_name, installment, cost_center_id, project_id, bank_account_id,
+        company_id
+      };
 
       const { data, error } = await supabase
         .from('transactions')
-        .insert([{
-          date, type, amount, contact_id, contact_type, cost_center_id, project_id, bank_account_id, status, due_date, competence, notes, company_id
-        }])
+        .upsert([id && !String(id).startsWith('row-') ? { id, ...payload } : payload])
         .select()
         .single();
 

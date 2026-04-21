@@ -144,7 +144,11 @@ export default function Transactions() {
     try {
       setLoading(true);
       const data = await apiFetch(`/api/transactions?year=${selectedYear}&month=${selectedMonth}`);
-      setRows(Array.isArray(data) ? data : []);
+      const formatted = (Array.isArray(data) ? data : []).map(r => ({
+        ...r,
+        amount: fmtBRL(r.amount)
+      }));
+      setRows(formatted);
     } catch (error) {
       toast.error('Erro ao carregar lançamentos');
     } finally {
@@ -289,7 +293,11 @@ export default function Transactions() {
       await Promise.all(installments.map(nr => 
         apiFetch('/api/transactions', {
           method: 'POST',
-          body: JSON.stringify({ ...nr, amount: parseBRL(nr.amount) })
+          body: JSON.stringify({ 
+            ...nr, 
+            amount: parseBRL(nr.amount),
+            cost_center_name: nr.costCenter 
+          })
         })
       ));
       
@@ -354,6 +362,7 @@ export default function Transactions() {
         body: JSON.stringify({
           ...row,
           amount: parseBRL(row.amount),
+          cost_center_name: row.costCenter
         })
       });
       
