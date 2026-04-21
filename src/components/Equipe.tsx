@@ -191,7 +191,7 @@ export default function Equipe() {
 
       <div className="space-y-4">
         <div className="bg-[#111114] border border-white/5 rounded-[2rem] overflow-hidden shadow-2xl">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto scrollbar-hide">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-white/5 bg-white/[0.02]">

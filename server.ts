@@ -5,6 +5,9 @@ import { supabase } from './lib/supabase.js';
 const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
 
+import { Resend } from 'resend';
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+
 if (!supabaseUrl || !supabaseKey) {
   console.error('[supabase] Missing SUPABASE_URL or key environment variables.');
 }
@@ -385,6 +388,37 @@ export const api = express.Router();
       // 5. Cleanup invitation
       await supabase.from('invitations').delete().eq('id', invite.id);
 
+      // 6. Notify Master User
+      try {
+        const { data: master } = await supabase
+          .from('profiles')
+          .select('email, name')
+          .eq('company_id', company.id)
+          .eq('role', 'master')
+          .single();
+
+        if (master) {
+          const appUrl = 'https://zaas-app.vercel.app';
+          if (resend) {
+            await resend.emails.send({
+              from: 'EngERP <noreply@zass.com.br>',
+              to: master.email,
+              subject: 'Novo membro aguardando aprovação',
+              html: `
+                <p>Olá ${master.name},</p>
+                <p>Um novo membro, <strong>${name}</strong> (${email}), acabou de se cadastrar na sua empresa no EngERP e aguarda sua aprovação.</p>
+                <p>Acesse o painel de equipe para liberar o acesso:</p>
+                <a href="${appUrl}">${appUrl}</a>
+              `
+            });
+          } else {
+            console.log(`[SIMULATION] Notificação para Master (${master.email}): Novo membro ${name} registrado.`);
+          }
+        }
+      } catch (notifyError) {
+        console.error('Erro ao notificar Master:', notifyError);
+      }
+
       res.json({ success: true, message: 'Cadastro realizado. Aguarde aprovação do administrador.' });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -428,9 +462,8 @@ export const api = express.Router();
 
       // 2. Trigger Supabase Invite Email
       // This sends a native Supabase invitation email
-      const appUrl = process.env.APP_URL || 'http://localhost:3000';
       const { error: authInviteError } = await supabase.auth.admin.inviteUserByEmail(email, {
-        redirectTo: `${appUrl}/signup`,
+        redirectTo: `https://zaas-app.vercel.app/`,
         data: { name }
       });
 
@@ -511,9 +544,8 @@ export const api = express.Router();
   api.post('/team/resend-invite', async (req, res) => {
     const { email, name } = req.body;
     try {
-      const appUrl = process.env.APP_URL || 'http://localhost:3000';
       const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
-        redirectTo: `${appUrl}/signup`,
+        redirectTo: `https://zaas-app.vercel.app/`,
         data: { name }
       });
       
