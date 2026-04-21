@@ -84,21 +84,32 @@ export default function Reports() {
       const targetMonths = selectedMonth === 'all' ? [0,1,2,3,4,5,6,7,8,9,10,11] : [selectedMonth];
 
       txData.forEach((r: any) => {
-        // Lógica baseada na API: status 'completed' = pago, 'pending' = pendente
-        const isPaid = r.status === 'completed';
-        const refDate = r.date;
-        if (!refDate) return;
+        const pDate = r.payment_date || r.paymentDate;
+        const isPaid = !!pDate;
+        // Group by payment date for paid items (Realized), else launch date for pending (Projected)
+        const refDate = isPaid ? pDate : r.date;
+        
+        if (!refDate || typeof refDate !== 'string') return;
 
-        const d = new Date(refDate + 'T12:00:00');
-        const m = d.getMonth();
-        const y = d.getFullYear();
+        let y = 0, m = 0;
+        if (refDate.includes('-')) {
+          const parts = refDate.split('-');
+          y = parseInt(parts[0], 10);
+          m = parseInt(parts[1], 10) - 1;
+        } else {
+          const d = new Date(refDate);
+          y = d.getFullYear();
+          m = d.getMonth();
+        }
 
         if (y !== selectedYear) return;
 
         const val = parseBRL(r.amount);
         const isIncome = r.type === 'income';
-        const cat = r.costCenter || r.classification || '';
-        const isDivisao = cat.toUpperCase().includes('DIVISÃO DE LUCRO');
+        const cat = r.costCenter || r.cost_center_name || r.classification || '';
+        const isDivisao = 
+          (r.costCenter || r.cost_center_name || '').toUpperCase().includes('DIVISÃO DE LUCRO') || 
+          (r.classification || '').toUpperCase().includes('DIVISÃO DE LUCRO');
 
         // Apply contract filter
         if (selectedContract !== 'all' && r.costCenter !== selectedContract) return;
