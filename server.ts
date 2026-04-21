@@ -69,7 +69,7 @@ export const api = express.Router();
           project:project_id(name),
           bank_account:bank_account_id(name)
         `)
-        .order('date', { ascending: false });
+        .order('id', { ascending: true });
 
       if (year) {
         const startOfYear = `${year}-01-01`;

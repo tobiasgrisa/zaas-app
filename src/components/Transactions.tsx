@@ -308,7 +308,6 @@ export default function Transactions() {
   // ── Acumulado Visual Linha-a-Linha ───────────────────────────────────────────
   let accumulated = effectiveSaldo;
   const processed = [...rows]
-    .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
     .map(r => {
       const pDate = r.paymentDate?.trim();
       const val = parseBRL(r.amount);
