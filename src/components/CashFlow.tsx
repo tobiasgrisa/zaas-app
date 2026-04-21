@@ -37,19 +37,15 @@ export default function CashFlow() {
   const loadData = async () => {
     try {
       // 1. Fetch data from API
-      const [txDataRaw, summary] = await Promise.all([
+      // We fetch all transactions from the selected year and the January initial balance
+      const [txDataRaw, janBalanceData] = await Promise.all([
         apiFetch(`/api/transactions?year=${selectedYear}`),
-        apiFetch('/api/summary')
+        apiFetch(`/api/initial-balance?year=${selectedYear}&month=0`)
       ]);
       
-      // Calculate opening balance for the year projection
-      // For simplicity, we start with the current total balance
-      let currentInitial = summary.balance;
+      const janInitial = janBalanceData.amount || 0;
+      let currentInitialBalance = janInitial;
       
-      // OPTIONAL: If we want the projection to stay in the past, we'd subtract 
-      // all transactions that happened after the start of this period.
-      // For now, let's use the current balance as the "live" starting point.
-
       const yearlyFlow = [];
       let totReceita = 0;
       let totDespesa = 0;
@@ -57,34 +53,35 @@ export default function CashFlow() {
       let globPendingRec = 0;
       let globPendingPay = 0;
 
+      // Ensure data is array
+      const allTxs = Array.isArray(txDataRaw) ? txDataRaw : [];
+
       // 2. Iterate each month and process the transactions
       for (let m = 0; m < 12; m++) {
-        // API retorna: status ('completed' | 'pending') e date
-        const incomeRows = txDataRaw.filter((r: any) => {
-          if (r.type !== 'income' || r.status !== 'completed' || !r.date) return false;
-          const d = new Date(r.date + 'T12:00:00');
+        // REALIZED (Top Table): Only items with payment_date in this month
+        const paidRows = allTxs.filter((r: any) => {
+          const pDate = r.payment_date || r.paymentDate;
+          if (!pDate) return false;
+          const d = new Date(pDate + 'T12:00:00');
           return d.getFullYear() === selectedYear && d.getMonth() === m;
         });
-        
-        const rawExpenseRows = txDataRaw.filter((r: any) => {
-          if (r.type !== 'expense' || r.status !== 'completed' || !r.date) return false;
-          const d = new Date(r.date + 'T12:00:00');
-          return d.getFullYear() === selectedYear && d.getMonth() === m;
-        });
+
+        const incomeRows = paidRows.filter((r: any) => r.type === 'income');
+        const rawExpenseRows = paidRows.filter((r: any) => r.type === 'expense');
         
         const lucroRows = rawExpenseRows.filter((r: any) => (r.costCenter || r.classification || '')?.toUpperCase().includes('DIVISÃO DE LUCRO'));
         const expenseRows = rawExpenseRows.filter((r: any) => !(r.costCenter || r.classification || '')?.toUpperCase().includes('DIVISÃO DE LUCRO'));
         
-        const pendingIncRows = txDataRaw.filter((r: any) => {
-          if (r.type !== 'income' || r.status === 'completed' || !r.date) return false;
+        // PENDING (Bottom Table): Items without payment_date, grouped by launch month
+        const pendingRows = allTxs.filter((r: any) => {
+          const pDate = r.payment_date || r.paymentDate;
+          if (pDate) return false; // Already paid
           const d = new Date(r.date + 'T12:00:00');
           return d.getFullYear() === selectedYear && d.getMonth() === m;
         });
-        const pendingExpRows = txDataRaw.filter((r: any) => {
-          if (r.type !== 'expense' || r.status === 'completed' || !r.date) return false;
-          const d = new Date(r.date + 'T12:00:00');
-          return d.getFullYear() === selectedYear && d.getMonth() === m;
-        });
+
+        const pendingIncRows = pendingRows.filter((r: any) => r.type === 'income');
+        const pendingExpRows = pendingRows.filter((r: any) => r.type === 'expense');
 
         const receita = incomeRows.reduce((acc: number, r: any) => acc + parseBRL(r.amount), 0);
         const despesa = expenseRows.reduce((acc: number, r: any) => acc + parseBRL(r.amount), 0);
@@ -96,12 +93,13 @@ export default function CashFlow() {
         globPendingRec += pRec;
         globPendingPay += pPay;
 
-        const acumulado = currentInitial + receita - despesa - lucro;
+        const resultadoMes = receita - despesa - lucro;
+        const acumulado = currentInitialBalance + resultadoMes;
         const lucratividade = receita > 0 ? ((receita - despesa) / receita) * 100 : 0;
 
         yearlyFlow.push({
           month: MONTHS[m],
-          saldoInicial: currentInitial,
+          saldoInicial: currentInitialBalance,
           receita,
           despesa,
           divisaoLucro: lucro,
@@ -117,7 +115,8 @@ export default function CashFlow() {
           rawPendingPay: pendingExpRows
         });
 
-        currentInitial = acumulado;
+        // Carry over balance to next month
+        currentInitialBalance = acumulado;
         totReceita += receita;
         totDespesa += despesa;
         totLucro += lucro;
@@ -127,8 +126,8 @@ export default function CashFlow() {
       setPendingReceivable(globPendingRec);
       setPendingPayable(globPendingPay);
       
-      const firstInitial = yearlyFlow[0]?.saldoInicial || 0;
-      const finalAcumulado = firstInitial + totReceita - totDespesa - totLucro;
+      const firstInitial = janInitial;
+      const finalAcumulado = currentInitialBalance; 
       const totMargin = totReceita > 0 ? ((totReceita - totDespesa) / totReceita) * 100 : 0;
       
       setTotalRow({
