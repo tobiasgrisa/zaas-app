@@ -107,6 +107,46 @@ export const api = express.Router();
     }
   });
 
+  // Initial Balance per month/year
+  api.get('/initial-balance', async (req, res) => {
+    try {
+      const company_id = req.headers['x-company-id'] || 1;
+      const { year, month } = req.query;
+      const { data, error } = await supabase
+        .from('initial_balances')
+        .select('amount')
+        .eq('company_id', company_id)
+        .eq('year', year)
+        .eq('month', month)
+        .maybeSingle();
+
+      if (error) throw error;
+      res.json({ amount: data?.amount || 0 });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  api.post('/initial-balance', async (req, res) => {
+    try {
+      const company_id = req.headers['x-company-id'] || 1;
+      const { year, month, amount } = req.body;
+      const { error } = await supabase
+        .from('initial_balances')
+        .upsert({
+          company_id,
+          year,
+          month,
+          amount: Number(amount)
+        }, { onConflict: 'company_id,year,month' });
+
+      if (error) throw error;
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   api.post('/transactions', async (req, res) => {
     try {
       const { date, type, amount, contact_id, contact_type, cost_center_id, project_id, bank_account_id, status, due_date, competence, notes } = req.body;

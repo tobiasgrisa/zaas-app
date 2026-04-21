@@ -75,14 +75,18 @@ const emptyRow = (sYear: number, sMonth: number): Row => {
   };
 };
 
-const parseBRL = (s: string) => {
+const parseBRL = (s: any) => {
+  if (typeof s === 'number') return s;
+  if (!s || typeof s !== 'string') return 0;
   const cleaned = s.replace(/R\$\s?/g, '').replace(/\./g, '').replace(',', '.').trim();
   const n = parseFloat(cleaned);
   return isNaN(n) ? 0 : n;
 };
 
-const fmtBRL = (n: number) =>
-  n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const fmtBRL = (n: any) => {
+  const val = typeof n === 'number' ? n : 0;
+  return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+};
 
 const maskBRL = (raw: string) => {
   const digits = raw.replace(/\D/g, '');
@@ -112,6 +116,29 @@ export default function Transactions() {
   // linhas do mês selecionado
   const [rows, setRows] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [initialBalanceJan, setInitialBalanceJan] = React.useState(0);
+
+  const loadInitialBalance = async () => {
+    try {
+      const data = await apiFetch(`/api/initial-balance?year=${selectedYear}&month=${selectedMonth}`);
+      setInitialBalanceJan(data.amount || 0);
+    } catch (e) {
+      console.error('Error loading initial balance:', e);
+    }
+  };
+
+  const saveInitialBalance = async (val: number) => {
+    try {
+      await apiFetch('/api/initial-balance', {
+        method: 'POST',
+        body: JSON.stringify({ year: selectedYear, month: selectedMonth, amount: val })
+      });
+      toast.success('Saldo inicial atualizado!');
+    } catch (e) {
+      toast.error('Erro ao salvar saldo inicial');
+    }
+  };
+
 
   const loadTransactions = async () => {
     try {
@@ -152,7 +179,9 @@ export default function Transactions() {
   // Carrega transações ao mudar de mês/ano
   React.useEffect(() => {
     loadTransactions();
+    loadInitialBalance();
   }, [selectedYear, selectedMonth]);
+
 
   // saldo inicial — Janeiro: manual | outros meses: acumulado do mês anterior
   const [saldoAnterior, setSaldoAnterior] = React.useState(0);
@@ -194,7 +223,8 @@ export default function Transactions() {
   }, [selectedYear, selectedMonth, rows]);
 
   // Saldo inicial efetivo do mês exibido
-  const effectiveSaldo = saldoAnterior;
+  const effectiveSaldo = selectedMonth === 0 ? initialBalanceJan : saldoAnterior;
+
 
   // ── parcelas (gerador automático) ────────────────────────────────────────────
   const handleInstallmentBlur = (row: Row, value: string) => {
@@ -580,10 +610,23 @@ export default function Transactions() {
           {/* Caixa efetivado — somente lançamentos COM data de pagamento */}
           <div className="border-t border-white/10 pt-3 space-y-2">
             <p className="text-[9px] uppercase font-bold text-slate-600 tracking-wider">Caixa (pagos)</p>
-            <SummaryRow label="Saldo Inicial"  value={fmtBRL(effectiveSaldo)}  color="text-indigo-300" />
+            {selectedMonth === 0 ? (
+              <div className="space-y-1">
+                <span className="text-[10px] uppercase text-slate-500">Saldo Inicial</span>
+                <input
+                  className="w-full bg-indigo-500/10 border border-indigo-500/20 rounded px-2 py-1 text-xs font-bold text-indigo-300 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  value={maskBRL(initialBalanceJan.toFixed(2).replace('.', ''))}
+                  onChange={(e) => setInitialBalanceJan(parseBRL(e.target.value))}
+                  onBlur={() => saveInitialBalance(initialBalanceJan)}
+                />
+              </div>
+            ) : (
+              <SummaryRow label="Saldo Inicial"  value={fmtBRL(effectiveSaldo)}  color="text-indigo-300" />
+            )}
             <SummaryRow label="Total Receita"  value={fmtBRL(totalReceita)}    color="text-emerald-400" />
             <SummaryRow label="Total Despesa"  value={fmtBRL(totalDespesa)}    color="text-rose-400" />
           </div>
+
 
           {/* Pendentes — lançamentos SEM data de pagamento */}
           {(totalAReceber > 0 || totalAPagar > 0) && (
