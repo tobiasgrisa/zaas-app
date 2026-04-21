@@ -190,8 +190,8 @@ export default function Equipe() {
       </div>
 
       <div className="space-y-4">
-        <div className="bg-[#111114] border border-white/5 rounded-[2rem] overflow-hidden shadow-2xl">
-          <div className="overflow-x-auto scrollbar-hide">
+        <div className="bg-[#111114] border border-white/5 rounded-[2rem] shadow-2xl">
+          <div className="overflow-visible scrollbar-hide">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-white/5 bg-white/[0.02]">
@@ -255,8 +255,8 @@ export default function Equipe() {
 
                         {openSelectId === member.id && (
                           <>
-                            <div className="fixed inset-0 z-10" onClick={() => setOpenSelectId(null)} />
-                            <div className="absolute left-8 top-[80%] z-20 w-[240px] bg-[#1a1a1e] border border-white/10 rounded-2xl shadow-2xl p-2 animate-in fade-in zoom-in duration-200">
+                            <div className="fixed inset-0 z-40" onClick={() => setOpenSelectId(null)} />
+                            <div className="absolute right-0 top-[70%] z-50 w-[240px] bg-[#1a1a1e] border border-white/10 rounded-2xl shadow-2xl p-2 animate-in fade-in zoom-in duration-200">
                               {AVAILABLE_MODULES.map((mod) => (
                                 <div 
                                   key={mod.id}
