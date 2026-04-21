@@ -74,8 +74,12 @@ export default function CashFlow() {
         const incomeRows = paidRows.filter((r: any) => r.type === 'income');
         const rawExpenseRows = paidRows.filter((r: any) => r.type === 'expense');
         
-        const lucroRows = rawExpenseRows.filter((r: any) => (r.costCenter || r.classification || '')?.toUpperCase().includes('DIVISÃO DE LUCRO'));
-        const expenseRows = rawExpenseRows.filter((r: any) => !(r.costCenter || r.classification || '')?.toUpperCase().includes('DIVISÃO DE LUCRO'));
+        const isLucro = (r: any) => 
+          (r.costCenter || '').toUpperCase().includes('DIVISÃO DE LUCRO') || 
+          (r.classification || '').toUpperCase().includes('DIVISÃO DE LUCRO');
+
+        const lucroRows = rawExpenseRows.filter(isLucro);
+        const expenseRows = rawExpenseRows.filter((r: any) => !isLucro(r));
         
         // PENDING (Bottom Table): Items without payment_date, grouped by launch month
         const pendingRows = allTxs.filter((r: any) => {
