@@ -382,7 +382,7 @@ export const api = express.Router();
           email,
           company_id: company.id,
           role: 'member',
-          status: 'pending',
+          status: 'approved',
           modules: invite.modules || []
         }]);
 
@@ -391,7 +391,7 @@ export const api = express.Router();
       // 5. Cleanup invitation
       await supabase.from('invitations').delete().eq('id', invite.id);
 
-      res.json({ success: true, message: 'Cadastro realizado. Aguarde aprovação do administrador.' });
+      res.json({ success: true, message: 'Cadastro realizado com sucesso! Seja bem-vindo.' });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
