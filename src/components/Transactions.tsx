@@ -296,7 +296,8 @@ export default function Transactions() {
           body: JSON.stringify({ 
             ...nr, 
             amount: parseBRL(nr.amount),
-            cost_center_name: nr.costCenter 
+            cost_center_name: nr.costCenter,
+            payment_date: nr.paymentDate || null
           })
         })
       ));
@@ -362,7 +363,8 @@ export default function Transactions() {
         body: JSON.stringify({
           ...row,
           amount: parseBRL(row.amount),
-          cost_center_name: row.costCenter
+          cost_center_name: row.costCenter,
+          payment_date: row.paymentDate || null
         })
       });
       

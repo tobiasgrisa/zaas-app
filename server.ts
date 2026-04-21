@@ -99,6 +99,7 @@ export const api = express.Router();
         bank_account_name: t.bank_account?.name,
         classification: t.classification,
         description: t.description || t.notes,
+        paymentDate: t.payment_date, // Novo campo do banco
         saved: true
       }));
 
@@ -163,13 +164,22 @@ export const api = express.Router();
     try {
       const { 
         id, date, type, amount, contact_id, contact_type, status, due_date, competence, notes,
-        description, classification, cost_center_name, installment, cost_center_id, project_id, bank_account_id
+        description, classification, cost_center_name, installment, payment_date, paymentDate,
+        cost_center_id, project_id, bank_account_id
       } = req.body;
       const company_id = req.headers['x-company-id'] || 1;
 
+      // Sanitização de campos de ID para evitar erro de Foreign Key (string vazia -> null)
+      const sanitizeId = (val: any) => (val === '' || val === undefined || val === null) ? null : val;
+
       const payload = {
-        date, type, amount, contact_id, contact_type, status, due_date, competence, notes,
-        description, classification, cost_center_name, installment, cost_center_id, project_id, bank_account_id,
+        date, type, amount: Number(amount), contact_id: sanitizeId(contact_id), 
+        contact_type: sanitizeId(contact_type), status, due_date, competence, notes,
+        description, classification, cost_center_name, installment, 
+        payment_date: payment_date || paymentDate || null,
+        cost_center_id: sanitizeId(cost_center_id), 
+        project_id: sanitizeId(project_id), 
+        bank_account_id: sanitizeId(bank_account_id),
         company_id
       };
 
