@@ -59,6 +59,7 @@ export const api = express.Router();
   // Transactions
   api.get('/transactions', async (req, res) => {
     try {
+      const company_id = req.headers['x-company-id'] || 1;
       const { year, month } = req.query;
 
       let query = supabase
@@ -69,6 +70,7 @@ export const api = express.Router();
           project:project_id(name),
           bank_account:bank_account_id(name)
         `)
+        .eq('company_id', company_id)
         .order('id', { ascending: true });
 
       if (year) {

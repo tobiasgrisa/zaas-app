@@ -37,13 +37,12 @@ export default function CashFlow() {
   const loadData = async () => {
     try {
       // 1. Fetch data from API
-      // We fetch all transactions from the selected year and the January initial balance
       const [txDataRaw, janBalanceData] = await Promise.all([
         apiFetch(`/api/transactions?year=${selectedYear}`),
         apiFetch(`/api/initial-balance?year=${selectedYear}&month=0`)
       ]);
       
-      const janInitial = janBalanceData.amount || 0;
+      const janInitial = janBalanceData?.amount || 0;
       let currentInitialBalance = janInitial;
       
       const yearlyFlow = [];
@@ -56,14 +55,20 @@ export default function CashFlow() {
       // Ensure data is array
       const allTxs = Array.isArray(txDataRaw) ? txDataRaw : [];
 
-      // 2. Iterate each month and process the transactions
+      // 2. Iterate each month (0-11) and process the transactions
       for (let m = 0; m < 12; m++) {
+        const monthNum = m + 1;
+        const targetYearStr = String(selectedYear);
+        const targetMonthStr = String(monthNum).padStart(2, '0');
+
         // REALIZED (Top Table): Only items with payment_date in this month
         const paidRows = allTxs.filter((r: any) => {
           const pDate = r.payment_date || r.paymentDate;
-          if (!pDate) return false;
-          const d = new Date(pDate + 'T12:00:00');
-          return d.getFullYear() === selectedYear && d.getMonth() === m;
+          if (!pDate || typeof pDate !== 'string') return false;
+          // Format expected: YYYY-MM-DD
+          const parts = pDate.split('-');
+          if (parts.length < 2) return false;
+          return parts[0] === targetYearStr && parts[1] === targetMonthStr;
         });
 
         const incomeRows = paidRows.filter((r: any) => r.type === 'income');
@@ -76,8 +81,12 @@ export default function CashFlow() {
         const pendingRows = allTxs.filter((r: any) => {
           const pDate = r.payment_date || r.paymentDate;
           if (pDate) return false; // Already paid
-          const d = new Date(r.date + 'T12:00:00');
-          return d.getFullYear() === selectedYear && d.getMonth() === m;
+          
+          const lDate = r.date;
+          if (!lDate || typeof lDate !== 'string') return false;
+          const parts = lDate.split('-');
+          if (parts.length < 2) return false;
+          return parts[0] === targetYearStr && parts[1] === targetMonthStr;
         });
 
         const pendingIncRows = pendingRows.filter((r: any) => r.type === 'income');
