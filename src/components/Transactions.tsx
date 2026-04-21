@@ -459,7 +459,7 @@ export default function Transactions() {
               onClick={() => {
                 const nr = emptyRow(selectedYear, selectedMonth);
                 nr.type = 'income';
-                setRows([nr, ...rows]);
+                setRows([...rows, nr]);
               }}
               className="flex items-center gap-2 bg-emerald-950/40 text-emerald-400 px-4 py-2 rounded-xl text-xs font-bold hover:bg-emerald-900/50 transition-all border border-emerald-900/50"
             >
@@ -469,7 +469,7 @@ export default function Transactions() {
               onClick={() => {
                 const nr = emptyRow(selectedYear, selectedMonth);
                 nr.type = 'expense';
-                setRows([nr, ...rows]);
+                setRows([...rows, nr]);
               }}
               className="flex items-center gap-2 bg-rose-950/40 text-rose-400 px-4 py-2 rounded-xl text-xs font-bold hover:bg-rose-900/50 transition-all border border-rose-900/50"
             >
