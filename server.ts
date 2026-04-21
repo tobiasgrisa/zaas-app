@@ -350,7 +350,7 @@ export const api = express.Router();
       // 2. Check Invitation
       const { data: invite, error: inviteError } = await supabase
         .from('invitations')
-        .select('id')
+        .select('id, modules')
         .eq('email', email)
         .eq('company_id', company.id)
         .single();
@@ -377,7 +377,8 @@ export const api = express.Router();
           email,
           company_id: company.id,
           role: 'member',
-          status: 'pending'
+          status: 'pending',
+          modules: invite.modules || []
         }]);
 
       if (profError) throw profError;
@@ -410,12 +411,12 @@ export const api = express.Router();
 
   // Invite User
   api.post('/team/invite', async (req, res) => {
-    const { email, name, company_id, company_name } = req.body;
+    const { email, name, company_id, company_name, modules } = req.body;
     try {
       // Save invitation
       const { error: inviteError } = await supabase
         .from('invitations')
-        .upsert([{ email, company_id }], { onConflict: 'email, company_id' });
+        .upsert([{ email, company_id, modules }], { onConflict: 'email, company_id' });
 
       if (inviteError) throw inviteError;
 
@@ -446,7 +447,7 @@ export const api = express.Router();
 
   // Approve User
   api.post('/team/approve', async (req, res) => {
-    const { profile_id, status } = req.body; // status: 'approved' or 'rejected' (delete)
+    const { profile_id, status } = req.body; // status: 'approved' or 'rejected'
     try {
       if (status === 'approved') {
         const { error } = await supabase
@@ -455,10 +456,41 @@ export const api = express.Router();
           .eq('id', profile_id);
         if (error) throw error;
       } else {
-        // If rejected, we might want to delete the profile or just mark as rejected
-        const { error } = await supabase.from('profiles').delete().eq('id', profile_id);
-        if (error) throw error;
+        // If rejected during pending stage, delete profile and auth user
+        await supabase.auth.admin.deleteUser(profile_id);
+        await supabase.from('profiles').delete().eq('id', profile_id);
       }
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Update Member Modules
+  api.post('/team/update-modules', async (req, res) => {
+    const { profile_id, modules } = req.body;
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ modules })
+        .eq('id', profile_id);
+      
+      if (error) throw error;
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Remove Member
+  api.post('/team/remove', async (req, res) => {
+    const { profile_id } = req.body;
+    try {
+      // Delete from Auth and Profiles
+      await supabase.auth.admin.deleteUser(profile_id);
+      const { error } = await supabase.from('profiles').delete().eq('id', profile_id);
+      
+      if (error) throw error;
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
