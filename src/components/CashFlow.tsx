@@ -39,7 +39,7 @@ export default function CashFlow() {
       // 1. Fetch data from API
       const [txDataRaw, janBalanceData] = await Promise.all([
         apiFetch(`/api/transactions?year=${selectedYear}`),
-        apiFetch(`/api/initial-balance?year=${selectedYear}&month=0`)
+        apiFetch(`/api/opening-balance?year=${selectedYear}&month=0`)
       ]);
       
       const janInitial = janBalanceData?.amount || 0;
