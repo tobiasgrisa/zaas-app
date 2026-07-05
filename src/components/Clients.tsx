@@ -166,7 +166,7 @@ export default function Clients() {
 
       {/* Dialog cadastro / edição */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-5xl w-full bg-[#16161a] border-white/10 text-white rounded-[2rem] p-8">
+        <DialogContent className="sm:max-w-5xl w-[95vw] bg-[#16161a] border-white/10 text-white rounded-[2rem] p-8">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold mb-2">{isEditing ? 'Editar Cliente' : 'Cadastrar Cliente'}</DialogTitle>
           </DialogHeader>
