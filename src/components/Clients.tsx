@@ -141,71 +141,140 @@ export default function Clients() {
         </Button>
       </div>
 
+      {/* Datalists para autocomplete */}
+      <datalist id="dl-nomes">
+        {[...new Set(clients.map((c: any) => c.nome).filter(Boolean))].map((v: any) => <option key={v} value={v} />)}
+      </datalist>
+      <datalist id="dl-cpfcnpj">
+        {[...new Set(clients.map((c: any) => c.cpfCnpj).filter(Boolean))].map((v: any) => <option key={v} value={v} />)}
+      </datalist>
+      <datalist id="dl-enderecos">
+        {[...new Set(clients.map((c: any) => c.endereco).filter(Boolean))].map((v: any) => <option key={v} value={v} />)}
+      </datalist>
+      <datalist id="dl-ceps">
+        {[...new Set(clients.map((c: any) => c.cep).filter(Boolean))].map((v: any) => <option key={v} value={v} />)}
+      </datalist>
+      <datalist id="dl-bairros">
+        {[...new Set(clients.map((c: any) => c.bairro).filter(Boolean))].map((v: any) => <option key={v} value={v} />)}
+      </datalist>
+      <datalist id="dl-cidades">
+        {[...new Set(clients.map((c: any) => c.cidade).filter(Boolean))].map((v: any) => <option key={v} value={v} />)}
+      </datalist>
+      <datalist id="dl-ufs">
+        {[...new Set(clients.map((c: any) => c.uf).filter(Boolean))].map((v: any) => <option key={v} value={v} />)}
+      </datalist>
+
       {/* Dialog cadastro / edição */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-4xl bg-[#16161a] border-white/10 text-white rounded-[2rem]">
+        <DialogContent className="max-w-5xl w-full bg-[#16161a] border-white/10 text-white rounded-[2rem] p-8">
           <DialogHeader>
-            <DialogTitle>{isEditing ? 'Editar Cliente' : 'Cadastrar Cliente'}</DialogTitle>
+            <DialogTitle className="text-xl font-bold mb-2">{isEditing ? 'Editar Cliente' : 'Cadastrar Cliente'}</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-3 gap-4">
-            <Input
-              placeholder="Contrato"
-              className="bg-white/5 border-white/10 h-12 rounded-xl"
-              value={formData.contrato}
-              onChange={e => setFormData(f => ({ ...f, contrato: e.target.value }))}
-            />
-            <Input
-              placeholder="Valor (R$)"
-              className="bg-white/5 border-white/10 h-12 rounded-xl"
-              value={formData.valor}
-              onChange={e => handleValorChange(e.target.value)}
-            />
-            <Input
-              placeholder="Nome"
-              className="bg-white/5 border-white/10 h-12 rounded-xl"
-              value={formData.nome}
-              onChange={e => setFormData(f => ({ ...f, nome: e.target.value }))}
-            />
-            <Input
-              placeholder="CPF/CNPJ"
-              className="bg-white/5 border-white/10 h-12 rounded-xl"
-              value={formData.cpfCnpj}
-              onChange={e => setFormData(f => ({ ...f, cpfCnpj: formatCpfCnpj(e.target.value) }))}
-            />
-            <Input
-              placeholder="Endereço"
-              className="col-span-2 bg-white/5 border-white/10 h-12 rounded-xl"
-              value={formData.endereco}
-              onChange={e => setFormData(f => ({ ...f, endereco: e.target.value }))}
-            />
-            <Input
-              placeholder="CEP"
-              className="bg-white/5 border-white/10 h-12 rounded-xl"
-              value={formData.cep}
-              onChange={e => setFormData(f => ({ ...f, cep: e.target.value }))}
-            />
-            <Input
-              placeholder="Bairro"
-              className="bg-white/5 border-white/10 h-12 rounded-xl"
-              value={formData.bairro}
-              onChange={e => setFormData(f => ({ ...f, bairro: e.target.value }))}
-            />
-            <Input
-              placeholder="Cidade"
-              className="bg-white/5 border-white/10 h-12 rounded-xl"
-              value={formData.cidade}
-              onChange={e => setFormData(f => ({ ...f, cidade: e.target.value }))}
-            />
-            <Input
-              placeholder="UF"
-              className="bg-white/5 border-white/10 h-12 rounded-xl"
-              value={formData.uf}
-              onChange={e => setFormData(f => ({ ...f, uf: e.target.value }))}
-            />
+
+          {/* Linha 1: Contrato | Valor | Nome */}
+          <div className="grid grid-cols-3 gap-5 mb-4">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-slate-400 font-semibold uppercase tracking-wide">Contrato</label>
+              <input
+                placeholder="Ex: 25.001"
+                className="bg-white/5 border border-white/10 h-13 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-primary/60 w-full"
+                value={formData.contrato}
+                onChange={e => setFormData(f => ({ ...f, contrato: e.target.value }))}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-slate-400 font-semibold uppercase tracking-wide">Valor (R$)</label>
+              <input
+                placeholder="R$ 0,00"
+                className="bg-white/5 border border-white/10 h-13 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-primary/60 w-full"
+                value={formData.valor}
+                onChange={e => handleValorChange(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-slate-400 font-semibold uppercase tracking-wide">Nome / Razão Social</label>
+              <input
+                list="dl-nomes"
+                placeholder="Nome completo ou razão social"
+                className="bg-white/5 border border-white/10 h-13 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-primary/60 w-full"
+                value={formData.nome}
+                onChange={e => setFormData(f => ({ ...f, nome: e.target.value }))}
+              />
+            </div>
           </div>
+
+          {/* Linha 2: CPF/CNPJ | Endereço (span 2) */}
+          <div className="grid grid-cols-3 gap-5 mb-4">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-slate-400 font-semibold uppercase tracking-wide">CPF / CNPJ</label>
+              <input
+                list="dl-cpfcnpj"
+                placeholder="000.000.000-00"
+                className="bg-white/5 border border-white/10 h-13 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-primary/60 w-full"
+                value={formData.cpfCnpj}
+                onChange={e => setFormData(f => ({ ...f, cpfCnpj: formatCpfCnpj(e.target.value) }))}
+              />
+            </div>
+            <div className="col-span-2 flex flex-col gap-1">
+              <label className="text-xs text-slate-400 font-semibold uppercase tracking-wide">Endereço</label>
+              <input
+                list="dl-enderecos"
+                placeholder="Rua, número, complemento"
+                className="bg-white/5 border border-white/10 h-13 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-primary/60 w-full"
+                value={formData.endereco}
+                onChange={e => setFormData(f => ({ ...f, endereco: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          {/* Linha 3: CEP | Bairro | Cidade | UF */}
+          <div className="grid grid-cols-4 gap-5 mb-6">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-slate-400 font-semibold uppercase tracking-wide">CEP</label>
+              <input
+                list="dl-ceps"
+                placeholder="00000-000"
+                className="bg-white/5 border border-white/10 h-13 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-primary/60 w-full"
+                value={formData.cep}
+                onChange={e => setFormData(f => ({ ...f, cep: e.target.value }))}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-slate-400 font-semibold uppercase tracking-wide">Bairro</label>
+              <input
+                list="dl-bairros"
+                placeholder="Bairro"
+                className="bg-white/5 border border-white/10 h-13 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-primary/60 w-full"
+                value={formData.bairro}
+                onChange={e => setFormData(f => ({ ...f, bairro: e.target.value }))}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-slate-400 font-semibold uppercase tracking-wide">Cidade</label>
+              <input
+                list="dl-cidades"
+                placeholder="Cidade"
+                className="bg-white/5 border border-white/10 h-13 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-primary/60 w-full"
+                value={formData.cidade}
+                onChange={e => setFormData(f => ({ ...f, cidade: e.target.value }))}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-slate-400 font-semibold uppercase tracking-wide">UF</label>
+              <input
+                list="dl-ufs"
+                placeholder="SC"
+                maxLength={2}
+                className="bg-white/5 border border-white/10 h-13 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-primary/60 w-full uppercase"
+                value={formData.uf}
+                onChange={e => setFormData(f => ({ ...f, uf: e.target.value.toUpperCase() }))}
+              />
+            </div>
+          </div>
+
           <Button
             onClick={handleSave}
-            className="bg-primary hover:bg-primary/90 text-white h-12 rounded-xl"
+            className="bg-primary hover:bg-primary/90 text-white h-12 rounded-xl w-full text-base font-bold"
           >
             {isEditing ? 'Salvar Alterações' : 'Salvar Cliente'}
           </Button>
