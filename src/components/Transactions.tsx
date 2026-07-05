@@ -443,9 +443,9 @@ export default function Transactions() {
 
       <div className="flex gap-4 mt-4">
         {/* ── Tabela principal ── */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden rounded-2xl border border-white/5 bg-[#111114]">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden rounded-2xl border border-white/5 bg-[#111114]" style={{ maxHeight: 'calc(100vh - 120px)' }}>
           {/* Header */}
-          <div className="grid grid-cols-[140px_240px_180px_minmax(150px,1fr)_110px_80px_140px_140px_120px_50px] bg-black/60 border-b border-white/10 text-[10px] font-bold uppercase text-slate-400">
+          <div className="grid grid-cols-[140px_240px_180px_minmax(150px,1fr)_110px_80px_140px_140px_120px_50px] bg-black/60 border-b border-white/10 text-[10px] font-bold uppercase text-slate-400 sticky top-0 z-10">
             {['Data Lançamento','Classificação','Centro de Custo','Descrição','Valor','Parcelas','Data Pagamento','Forma Pagamento','Acumulado',''].map(h => (
               <div key={h} className="px-2 py-3">{h}</div>
             ))}

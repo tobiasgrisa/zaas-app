@@ -215,57 +215,59 @@ export default function Clients() {
       {/* Tabela */}
       <Card className="bg-[#16161a] border-white/5 shadow-2xl rounded-[2rem]">
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-white/5 hover:bg-transparent">
-                <TableHead className="text-slate-400">CONTRATO</TableHead>
-                <TableHead className="text-slate-400">VALOR</TableHead>
-                <TableHead className="text-slate-400">CLIENTE</TableHead>
-                <TableHead className="text-slate-400">CPF/CNPJ</TableHead>
-                <TableHead className="text-slate-400">ENDEREÇO</TableHead>
-                <TableHead className="text-slate-400">CEP</TableHead>
-                <TableHead className="text-slate-400">BAIRRO</TableHead>
-                <TableHead className="text-slate-400">CIDADE</TableHead>
-                <TableHead className="text-slate-400">UF</TableHead>
-                <TableHead className="text-slate-400">AÇÕES</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {clients.map(client => (
-                <TableRow key={client.id} className="border-white/5 hover:bg-white/5">
-                  <TableCell className="text-white">{client.contrato}</TableCell>
-                  <TableCell className="text-white">{formatBRL(client.valor)}</TableCell>
-                  <TableCell className="text-white">{client.nome}</TableCell>
-                  <TableCell className="text-white">{client.cpfCnpj}</TableCell>
-                  <TableCell className="text-white">{client.endereco}</TableCell>
-                  <TableCell className="text-white">{client.cep}</TableCell>
-                  <TableCell className="text-white">{client.bairro}</TableCell>
-                  <TableCell className="text-white">{client.cidade}</TableCell>
-                  <TableCell className="text-white">{client.uf}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2 items-center">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        title="Editar"
-                        onClick={() => openEdit(client)}
-                      >
-                        <Pencil size={16} className="text-slate-400 hover:text-white" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        title="Excluir"
-                        onClick={() => handleDelete(client.id)}
-                      >
-                        <Trash2 size={16} className="text-red-500 hover:text-red-400" />
-                      </Button>
-                    </div>
-                  </TableCell>
+          <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 220px)' }}>
+            <Table>
+              <TableHeader>
+                <TableRow className="border-white/5 hover:bg-transparent">
+                  <TableHead className="text-slate-400 sticky top-0 bg-[#16161a] z-10">CONTRATO</TableHead>
+                  <TableHead className="text-slate-400 sticky top-0 bg-[#16161a] z-10">VALOR</TableHead>
+                  <TableHead className="text-slate-400 sticky top-0 bg-[#16161a] z-10">CLIENTE</TableHead>
+                  <TableHead className="text-slate-400 sticky top-0 bg-[#16161a] z-10">CPF/CNPJ</TableHead>
+                  <TableHead className="text-slate-400 sticky top-0 bg-[#16161a] z-10">ENDEREÇO</TableHead>
+                  <TableHead className="text-slate-400 sticky top-0 bg-[#16161a] z-10">CEP</TableHead>
+                  <TableHead className="text-slate-400 sticky top-0 bg-[#16161a] z-10">BAIRRO</TableHead>
+                  <TableHead className="text-slate-400 sticky top-0 bg-[#16161a] z-10">CIDADE</TableHead>
+                  <TableHead className="text-slate-400 sticky top-0 bg-[#16161a] z-10">UF</TableHead>
+                  <TableHead className="text-slate-400 sticky top-0 bg-[#16161a] z-10">AÇÕES</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {clients.map(client => (
+                  <TableRow key={client.id} className="border-white/5 hover:bg-white/5">
+                    <TableCell className="text-white">{client.contrato}</TableCell>
+                    <TableCell className="text-white">{formatBRL(client.valor)}</TableCell>
+                    <TableCell className="text-white">{client.nome}</TableCell>
+                    <TableCell className="text-white">{client.cpfCnpj}</TableCell>
+                    <TableCell className="text-white">{client.endereco}</TableCell>
+                    <TableCell className="text-white">{client.cep}</TableCell>
+                    <TableCell className="text-white">{client.bairro}</TableCell>
+                    <TableCell className="text-white">{client.cidade}</TableCell>
+                    <TableCell className="text-white">{client.uf}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2 items-center">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="Editar"
+                          onClick={() => openEdit(client)}
+                        >
+                          <Pencil size={16} className="text-slate-400 hover:text-white" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="Excluir"
+                          onClick={() => handleDelete(client.id)}
+                        >
+                          <Trash2 size={16} className="text-red-500 hover:text-red-400" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
